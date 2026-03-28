@@ -3,16 +3,15 @@
 <head>
     <title>Ciphera</title>
 
+    <!-- Firebase (correct order) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    <!-- 🔐 CryptoJS for real encryption -->
+    <!-- CryptoJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-<button onclick="switchRoom()" style="float:right;">
-    🔄
-</button>
+
     <style>
-        
         body {
             font-family: Arial;
             background: #0f172a;
@@ -59,6 +58,7 @@
             border: none;
             cursor: pointer;
             background: #38bdf8;
+            margin: 5px;
         }
 
         input {
@@ -71,100 +71,125 @@
 
 <body>
 
-<h2>Ciphera</h2>
+<!-- 🔐 AUTH SCREEN -->
+<div id="authBox" style="text-align:center; margin-top:50px;">
+    <h2>Ciphera Login</h2>
 
-<div style="text-align:center;">
-    <textarea id="inputText" placeholder="Type message..."></textarea><br>
-    <button onclick="sendMessage()">Send</button>
+    <input id="email" placeholder="Email" type="email"><br><br>
+    <input id="password" placeholder="Password" type="password"><br><br>
+
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
 </div>
 
-<div class="chat-container" id="chatBox"></div>
+<!-- 💬 APP SCREEN -->
+<div id="app" style="display:none;">
+
+    <h2>Ciphera</h2>
+
+    <div style="text-align:center;">
+        <button onclick="switchRoom()">🔄 Switch Room</button>
+    </div>
+
+    <div style="text-align:center;">
+        <textarea id="inputText" placeholder="Type message..."></textarea><br>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="chat-container" id="chatBox"></div>
+
+</div>
 
 <script>
 /* ---------------- FIREBASE ---------------- */
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
+  apiKey: "YOUR_API_KEY",
   authDomain: "ciphera-1.firebaseapp.com",
   projectId: "ciphera-1",
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
-/* ---------------- USER + ROOM ---------------- */
-let roomId = localStorage.getItem("roomId");
+/* ---------------- AUTH ---------------- */
+function signup() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .catch(err => alert(err.message));
+}
+
+function login() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .catch(err => alert(err.message));
+}
+
+let userId = null;
+
+/* ---------------- AUTH STATE ---------------- */
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById("authBox").style.display = "none";
+        document.getElementById("app").style.display = "block";
+
+        userId = user.uid;
+
+        initRoom();   // start chat only after login
+    } else {
+        document.getElementById("authBox").style.display = "block";
+        document.getElementById("app").style.display = "none";
+
+        userId = null;
+    }
+});
+
+/* ---------------- ROOM SYSTEM ---------------- */
+let roomId;
 let roomKey;
 
-if (!roomId) {
-    roomId = prompt("Enter Room ID:");
-    if (roomId) {
+function initRoom() {
+    roomId = localStorage.getItem("roomId");
+
+    if (!roomId) {
+        roomId = prompt("Enter Room ID:");
         localStorage.setItem("roomId", roomId);
     }
-}
 
-// always fetch key AFTER roomId is confirmed
-roomKey = localStorage.getItem("roomKey_" + roomId);
+    roomKey = localStorage.getItem("roomKey_" + roomId);
 
-if (!roomKey) {
-    roomKey = prompt("Enter Secret Room Key:");
-    if (roomKey) {
+    if (!roomKey) {
+        roomKey = prompt("Enter Room Key:");
         localStorage.setItem("roomKey_" + roomId, roomKey);
     }
+
+    listenMessages();
 }
 
-let userId = localStorage.getItem("userId");
-if (!userId) {
-    userId = "user_" + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem("userId", userId);
-}
-
-/* ---------------- SWITCH ROOM ---------------- */
 function switchRoom() {
-    // remove current room only if it exists
-    if (roomId) {
-        localStorage.removeItem("roomKey_" + roomId);
-    }
-
+    localStorage.removeItem("roomKey_" + roomId);
     localStorage.removeItem("roomId");
-
-    // reload → fresh prompts
     location.reload();
 }
-/* ---------------- ENCRYPT / DECRYPT ---------------- */
+
+/* ---------------- ENCRYPTION ---------------- */
 function encrypt(text) {
     return CryptoJS.AES.encrypt(text, roomKey).toString();
 }
 
 function decrypt(cipher) {
-    try {
-        let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
-        return bytes.toString(CryptoJS.enc.Utf8) || "Wrong Key";
-    } catch {
-        return "Error";
-    }
+    let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
 }
 
-/* ---------------- UI MESSAGE ---------------- */
-function createMessage(text, type, encrypted = false) {
-    let div = document.createElement("div");
-    div.className = "message " + type;
-
-    if (encrypted) {
-        div.innerHTML = `
-            <div class="cipher">${text}</div>
-            <input type="password" placeholder="Room Key">
-            <button onclick="unlock(this)">Unlock</button>
-            <div class="decoded"></div>
-        `;
-    } else {
-        div.innerHTML = `<div>${text}</div>`;
-    }
-
-    document.getElementById("chatBox").appendChild(div);
-}
-
-/* ---------------- SEND ---------------- */
+/* ---------------- SEND MESSAGE ---------------- */
 function sendMessage() {
+    if (!userId) return;
+
     let text = document.getElementById("inputText").value;
     if (!text.trim()) return;
 
@@ -182,39 +207,56 @@ function sendMessage() {
     document.getElementById("inputText").value = "";
 }
 
-/* ---------------- UNLOCK ---------------- */
+/* ---------------- RECEIVE UI ---------------- */
+function createMessage(text, type) {
+    let div = document.createElement("div");
+    div.className = "message " + type;
+
+    div.innerHTML = `
+        <div>${text}</div>
+        <input type="password" placeholder="Room Key">
+        <button onclick="unlock(this)">Unlock</button>
+        <div class="decoded"></div>
+    `;
+
+    document.getElementById("chatBox").appendChild(div);
+}
+
 function unlock(btn) {
     let parent = btn.parentElement;
-    let key = parent.querySelector("input").value;
 
-    let cipher = parent.querySelector(".cipher").innerText;
+    let key = parent.querySelector("input").value;
+    let cipher = parent.querySelector("div").innerText;
 
     let bytes = CryptoJS.AES.decrypt(cipher, key);
     let decoded = bytes.toString(CryptoJS.enc.Utf8);
 
     parent.querySelector(".decoded").innerText =
-        decoded || "Incorrect Key";
+        decoded || "❌ Wrong Key";
 }
 
 /* ---------------- REALTIME LISTENER ---------------- */
-db.collection("rooms")
-  .doc(roomId)
-  .collection("messages")
-  .orderBy("time")
-  .onSnapshot(snapshot => {
-      document.getElementById("chatBox").innerHTML = "";
+function listenMessages() {
+    db.collection("rooms")
+      .doc(roomId)
+      .collection("messages")
+      .orderBy("time")
+      .onSnapshot(snapshot => {
 
-      snapshot.forEach(doc => {
-          let data = doc.data();
+          document.getElementById("chatBox").innerHTML = "";
 
-          createMessage(
-              data.text,
-              data.sender === userId ? "sent" : "received",
-              true
-          );
+          snapshot.forEach(doc => {
+              let data = doc.data();
+
+              let decrypted = decrypt(data.text);
+
+              createMessage(
+                  decrypted,
+                  data.sender === userId ? "sent" : "received"
+              );
+          });
       });
-  });
-
+}
 </script>
 
 </body>

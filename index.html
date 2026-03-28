@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <title>Ciphera</title>
@@ -79,6 +80,17 @@
 <div class="chat-container" id="chatBox"></div>
 
 <script>
+      let roomId = localStorage.getItem("roomId");
+let roomKey = localStorage.getItem("roomKey_" + roomId);
+
+if (!roomKey) {
+    roomKey = prompt("Enter Secret Key for this room:");
+    localStorage.setItem("roomKey_" + roomId, roomKey);
+}
+if (!roomId) {
+    roomId = prompt("Enter Room ID (anything like secret123):");
+    localStorage.setItem("roomId", roomId);
+}
    // 🔥 Firebase setup FIRST
 const firebaseConfig = {
   apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
@@ -101,22 +113,31 @@ if (!userId) {
     userId = "user_" + Math.random().toString(36).substr(2, 9);
     localStorage.setItem("userId", userId);
 }
-let secret = "1234";
+
 
 function encode(text) {
-    let encoded = "";
-    for (let i = 0; i < text.length; i++) {
-        encoded += String.fromCharCode(text.charCodeAt(i) + 5);
+    let base = btoa(text); // base64
+
+    let chars = "!@#$%^&*()_+";
+    let noisy = "";
+
+    for (let i = 0; i < base.length; i++) {
+        noisy += base[i];
+
+        // randomly add noise
+        if (Math.random() < 0.3) {
+            noisy += chars[Math.floor(Math.random() * chars.length)];
+        }
     }
-    return encoded;
+
+    return noisy;
 }
 
 function decode(text) {
-    let decoded = "";
-    for (let i = 0; i < text.length; i++) {
-        decoded += String.fromCharCode(text.charCodeAt(i) - 5);
-    }
-    return decoded;
+    // remove noise
+    let cleaned = text.replace(/[^a-zA-Z0-9=]/g, "");
+
+    return atob(cleaned); // decode base64
 }
 
 function createMessage(encodedText, type) {
@@ -141,7 +162,10 @@ function sendMessage() {
 
     let encoded = encode(text);
 
-    db.collection("messages").add({
+    db.collection("rooms")
+.doc(roomId)
+.collection("messages")
+.add({
     text: encoded,
     sender: userId,
     time: Date.now()
@@ -167,7 +191,7 @@ function unlockMessage(button) {
     let parent = button.parentElement;
     let pass = parent.querySelector("input").value;
 
-    if (pass !== secret) {
+    if (pass !== roomKey) {
         parent.querySelector(".decoded").innerText = "Incorrect password";
         return;
     }
@@ -199,7 +223,9 @@ function lockMessages() {
         el.innerText = ""; // just clears it silently
     });
 }
-db.collection("messages")
+db.collection("rooms")
+.doc(roomId)
+.collection("messages")
 .orderBy("time")
 .onSnapshot(snapshot => {
     document.getElementById("chatBox").innerHTML = "";
@@ -207,12 +233,13 @@ db.collection("messages")
     snapshot.forEach(doc => {
         let data = doc.data();
 
-       createMessage(
-    data.text,
-    data.sender === userId ? "sent" : "received"
-);
+        createMessage(
+            data.text,
+            data.sender === userId ? "sent" : "received"
+        );
     });
 });
+    
 </script>
 </div>
 </body>

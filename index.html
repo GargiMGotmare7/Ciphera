@@ -12,6 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
 <style>
+
 body{
 font-family:Arial;
 background:#0f172a;
@@ -72,12 +73,13 @@ border-radius:8px;
 padding:5px;
 margin-top:5px;
 }
+
 </style>
 </head>
 
 <body>
 
-<!-- AUTH -->
+<!-- LOGIN -->
 <div id="authBox" style="text-align:center;margin-top:50px;">
 
 <h2>Ciphera Login</h2>
@@ -97,7 +99,7 @@ Continue with Google
 </div>
 
 
-<!-- APP -->
+<!-- CHAT APP -->
 <div id="app" style="display:none;">
 
 <h2>Ciphera</h2>
@@ -132,15 +134,15 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const auth=firebase.auth();
-const db=firebase.firestore();
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 
 /* GOOGLE LOGIN */
 
 function googleLogin(){
 
-const provider=new firebase.auth.GoogleAuthProvider();
+const provider = new firebase.auth.GoogleAuthProvider();
 
 auth.signInWithPopup(provider)
 .catch(err=>alert(err.message));
@@ -171,7 +173,7 @@ password.value
 
 /* AUTH STATE */
 
-let userId=null;
+let userId = null;
 
 auth.onAuthStateChanged(user=>{
 
@@ -180,7 +182,7 @@ if(user){
 authBox.style.display="none";
 app.style.display="block";
 
-userId=user.uid;
+userId = user.uid;
 
 initRoom();
 
@@ -201,25 +203,23 @@ let roomKey;
 
 function initRoom(){
 
-roomId=localStorage.getItem("roomId");
+roomId = localStorage.getItem("roomId");
 
 if(!roomId){
 
-roomId=prompt("Enter Room ID:");
-
-if(!roomId)return;
+roomId = prompt("Enter Room ID:");
+if(!roomId) return;
 
 localStorage.setItem("roomId",roomId);
 
 }
 
-roomKey=localStorage.getItem("roomKey_"+roomId);
+roomKey = localStorage.getItem("roomKey_"+roomId);
 
 if(!roomKey){
 
-roomKey=prompt("Enter Room Key:");
-
-if(!roomKey)return;
+roomKey = prompt("Enter Room Key:");
+if(!roomKey) return;
 
 localStorage.setItem("roomKey_"+roomId,roomKey);
 
@@ -229,7 +229,6 @@ listenMessages();
 
 }
 
-
 function switchRoom(){
 
 localStorage.removeItem("roomId");
@@ -238,20 +237,11 @@ location.reload();
 }
 
 
-/* KEY HASH */
-
-function getKey(){
-
-return CryptoJS.SHA256(roomKey).toString();
-
-}
-
-
 /* ENCRYPT */
 
 function encrypt(text){
 
-return CryptoJS.AES.encrypt(text,getKey()).toString();
+return CryptoJS.AES.encrypt(text, roomKey).toString();
 
 }
 
@@ -262,10 +252,10 @@ function decrypt(cipher){
 
 try{
 
-let bytes=CryptoJS.AES.decrypt(cipher,getKey());
-let decoded=bytes.toString(CryptoJS.enc.Utf8);
+let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
+let decoded = bytes.toString(CryptoJS.enc.Utf8);
 
-return decoded||null;
+return decoded || null;
 
 }catch{
 
@@ -280,15 +270,13 @@ return null;
 
 function sendMessage(){
 
-let text=inputText.value;
+let text = inputText.value;
 
-if(!text.trim())return;
+if(!text.trim()) return;
 
-if(text.length>500){
-
+if(text.length > 500){
 alert("Message too long");
 return;
-
 }
 
 db.collection("rooms")
@@ -296,9 +284,9 @@ db.collection("rooms")
 .collection("messages")
 .add({
 
-text:encrypt(text),
-sender:userId,
-time:Date.now()
+text: encrypt(text),
+sender: userId,
+time: Date.now()
 
 });
 
@@ -307,11 +295,11 @@ inputText.value="";
 }
 
 
-/* ENTER TO SEND */
+/* ENTER KEY SEND */
 
 inputText.addEventListener("keydown",e=>{
 
-if(e.key==="Enter"&&!e.shiftKey){
+if(e.key==="Enter" && !e.shiftKey){
 
 e.preventDefault();
 sendMessage();
@@ -325,21 +313,21 @@ sendMessage();
 
 function createMessage(cipher,type,time){
 
-let decrypted=decrypt(cipher);
+let decrypted = decrypt(cipher);
 
-let div=document.createElement("div");
-div.className="message "+type;
+let div = document.createElement("div");
+div.className = "message " + type;
 
 if(decrypted){
 
-div.innerHTML=`
+div.innerHTML = `
 <div>${decrypted}</div>
 <div class="time">${new Date(time).toLocaleTimeString()}</div>
 `;
 
 }else{
 
-div.innerHTML=`
+div.innerHTML = `
 <div style="color:red;">Unable to decrypt</div>
 `;
 
@@ -350,7 +338,7 @@ chatBox.appendChild(div);
 }
 
 
-/* LISTEN REALTIME */
+/* REALTIME LISTENER */
 
 function listenMessages(){
 
@@ -364,11 +352,11 @@ chatBox.innerHTML="";
 
 snapshot.forEach(doc=>{
 
-let data=doc.data();
+let data = doc.data();
 
 createMessage(
 data.text,
-data.sender===userId?"sent":"received",
+data.sender === userId ? "sent" : "received",
 data.time
 );
 

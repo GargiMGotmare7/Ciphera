@@ -1,121 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Ciphera</title>
+    <title>Ciphera</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <!-- CryptoJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
-<style>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+        }
 
-body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-}
+        h2 { text-align: center; }
 
-h2{text-align:center;}
+        .chat-container {
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            margin-top: 20px;
+        }
 
-.chat-container{
-width:90%;
-max-width:400px;
-margin:auto;
-margin-top:20px;
-}
+        .message {
+            padding: 10px;
+            border-radius: 15px;
+            margin: 10px;
+            max-width: 70%;
+        }
 
-.message{
-padding:10px;
-border-radius:15px;
-margin:10px;
-max-width:70%;
-}
+        .sent {
+            background: #22c55e;
+            color: black;
+            margin-left: auto;
+            text-align: right;
+        }
 
-.sent{
-background:#22c55e;
-color:black;
-margin-left:auto;
-text-align:right;
-}
+        .received {
+            background: #1e293b;
+        }
 
-.received{
-background:#1e293b;
-}
+        textarea {
+            width: 80%;
+            height: 60px;
+            border-radius: 10px;
+            padding: 10px;
+        }
 
-.time{
-font-size:11px;
-opacity:.7;
-margin-top:4px;
-}
+        button {
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: #38bdf8;
+            margin: 5px;
+        }
 
-textarea{
-width:80%;
-height:60px;
-border-radius:10px;
-padding:10px;
-}
-
-button{
-padding:8px 15px;
-border-radius:10px;
-border:none;
-cursor:pointer;
-background:#38bdf8;
-margin:5px;
-}
-
-input{
-border-radius:8px;
-padding:5px;
-margin-top:5px;
-}
-
-</style>
+        input {
+            border-radius: 8px;
+            padding: 5px;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div id="authBox" style="text-align:center;margin-top:50px;">
+<!-- 🔐 AUTH -->
+<div id="authBox" style="text-align:center; margin-top:50px;">
+    <h2>Ciphera Login</h2>
 
-<h2>Ciphera Login</h2>
+    <button onclick="googleLogin()" style="width:220px;padding:10px;background:white;color:black;border-radius:8px;">
+        🔵 Continue with Google
+    </button>
 
-<button onclick="googleLogin()" style="width:220px;padding:10px;background:white;color:black;border-radius:8px;">
-Continue with Google
-</button>
+    <br><br>
 
-<br><br>
+    <input id="email" placeholder="Email" type="email"><br><br>
+    <input id="password" placeholder="Password" type="password"><br><br>
 
-<input id="email" placeholder="Email" type="email"><br><br>
-<input id="password" placeholder="Password" type="password"><br><br>
-
-<button onclick="signup()">Sign Up</button>
-<button onclick="login()">Login</button>
-
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
 </div>
 
-
+<!-- 💬 APP -->
 <div id="app" style="display:none;">
 
-<h2>Ciphera</h2>
+    <h2>Ciphera</h2>
 
-<div style="text-align:center;">
-<button onclick="switchRoom()">Switch Room</button>
+    <div style="text-align:center;">
+        <button onclick="switchRoom()">🔄 Switch Room</button>
+    </div>
+
+    <div style="text-align:center;">
+        <textarea id="inputText" placeholder="Type message..."></textarea><br>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="chat-container" id="chatBox"></div>
+
 </div>
-
-<div style="text-align:center;">
-<textarea id="inputText" placeholder="Type message..."></textarea><br>
-<button onclick="sendMessage()">Send</button>
-</div>
-
-<div class="chat-container" id="chatBox"></div>
-
-</div>
-
 
 <script>
-// 1. Firebase Configuration
+/* ---------------- FIREBASE INIT ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
   authDomain: "ciphera-1.firebaseapp.com",
@@ -127,133 +119,157 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// 2. Global Variables (Accessible by all functions)
-let userId = null;
-let roomId = null;
-let roomKey = null;
-
-// 3. Auth Logic
+/* ---------------- GOOGLE LOGIN ---------------- */
 function googleLogin() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => alert(err.message));
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    auth.signInWithPopup(provider)
+        .then(res => console.log("Google login success"))
+        .catch(err => alert(err.message));
 }
 
+/* ---------------- EMAIL AUTH ---------------- */
 function signup() {
-  auth.createUserWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
+    auth.createUserWithEmailAndPassword(
+        email.value,
+        password.value
+    ).catch(err => alert(err.message));
 }
 
 function login() {
-  auth.signInWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
+    auth.signInWithEmailAndPassword(
+        email.value,
+        password.value
+    ).catch(err => alert(err.message));
 }
 
+/* ---------------- AUTH STATE ---------------- */
+let userId = null;
+
 auth.onAuthStateChanged(user => {
-  if (user) {
-    userId = user.uid;
-    document.getElementById("authBox").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    initRoom();
-  } else {
-    document.getElementById("authBox").style.display = "block";
-    document.getElementById("app").style.display = "none";
-  }
+    if (user) {
+        document.getElementById("authBox").style.display = "none";
+        document.getElementById("app").style.display = "block";
+
+        userId = user.uid;
+
+        initRoom();
+    } else {
+        document.getElementById("authBox").style.display = "block";
+        document.getElementById("app").style.display = "none";
+
+        userId = null;
+    }
 });
 
-// 4. Room Management
-function initRoom() {
-  roomId = localStorage.getItem("roomId");
-  if (!roomId) {
-    roomId = prompt("Enter Room ID:");
-    if (!roomId) return;
-    localStorage.setItem("roomId", roomId);
-  }
+/* ---------------- ROOM SYSTEM ---------------- */
+let roomId;
+let roomKey;
 
-  roomKey = localStorage.getItem("roomKey_" + roomId);
-  if (!roomKey) {
-    roomKey = prompt("Enter Room Key:");
-    if (!roomKey) return;
-    localStorage.setItem("roomKey_" + roomId, roomKey);
-  }
-  listenMessages();
+function initRoom() {
+    roomId = localStorage.getItem("roomId");
+
+    if (!roomId) {
+        roomId = prompt("Enter Room ID:");
+        if (!roomId) return;
+        localStorage.setItem("roomId", roomId);
+    }
+
+    roomKey = localStorage.getItem("roomKey_" + roomId);
+
+    if (!roomKey) {
+        roomKey = prompt("Enter Room Key:");
+        if (!roomKey) return;
+        localStorage.setItem("roomKey_" + roomId, roomKey);
+    }
+
+    listenMessages();
 }
 
 function switchRoom() {
-  localStorage.removeItem("roomId");
-  // We don't necessarily remove the key so it's remembered next time you enter that ID
-  location.reload();
+    if (roomId) {
+        localStorage.removeItem("roomKey_" + roomId);
+    }
+    localStorage.removeItem("roomId");
+    location.reload();
 }
 
-// 5. Encryption Engine
+/* ---------------- ENCRYPTION ---------------- */
 function encrypt(text) {
-  return CryptoJS.AES.encrypt(text, roomKey).toString();
+    return CryptoJS.AES.encrypt(text, roomKey).toString();
 }
 
-function decrypt(cipher) {
-  try {
-    let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
-    let decoded = bytes.toString(CryptoJS.enc.Utf8);
-    return decoded || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// 6. Messaging Logic
+/* ---------------- SEND ---------------- */
 function sendMessage() {
-  const input = document.getElementById("inputText");
-  const text = input.value.trim();
+    let text = document.getElementById("inputText").value;
+    if (!text.trim()) return;
 
-  if (!text || !roomId || !roomKey) return;
-
-  // Encrypt the text into "secret language"
-  const secretMessage = encrypt(text);
-
-  db.collection("rooms").doc(roomId).collection("messages").add({
-    text: secretMessage,
-    sender: userId,
-    time: Date.now()
-  })
-  .then(() => {
-    input.value = ""; // Clear input after sending
-  })
-  .catch(err => alert("Error: " + err.message));
-}
-
-function listenMessages() {
-  db.collection("rooms").doc(roomId).collection("messages")
-    .orderBy("time", "asc")
-    .onSnapshot(snapshot => {
-      const chatBox = document.getElementById("chatBox");
-      chatBox.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        createMessage(data.text, data.sender === userId ? "sent" : "received", data.time);
+    db.collection("rooms")
+      .doc(roomId)
+      .collection("messages")
+      .add({
+          text: encrypt(text),
+          sender: userId,
+          time: Date.now()
       });
-      // Scroll to bottom
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
+
+    document.getElementById("inputText").value = "";
 }
 
-function createMessage(cipher, type, time) {
-  const decrypted = decrypt(cipher);
-  const div = document.createElement("div");
-  div.className = "message " + type;
-  div.innerHTML = `
-    <div>${decrypted || "<i>[Locked Message]</i>"}</div>
-    <div class="time">${new Date(time).toLocaleTimeString()}</div>
-  `;
-  document.getElementById("chatBox").appendChild(div);
+/* ---------------- MESSAGE UI ---------------- */
+function createMessage(cipher, type) {
+    let div = document.createElement("div");
+    div.className = "message " + type;
+
+    div.innerHTML = `
+        <div class="cipher">${cipher}</div>
+        <input type="password" placeholder="Room Key">
+        <button onclick="unlock(this)">Unlock</button>
+        <div class="decoded"></div>
+    `;
+
+    document.getElementById("chatBox").appendChild(div);
 }
 
-// 7. Event Listeners
-document.getElementById("inputText").addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-});
+/* ---------------- UNLOCK ---------------- */
+function unlock(btn) {
+    let parent = btn.parentElement;
+
+    let key = parent.querySelector("input").value;
+    let cipher = parent.querySelector(".cipher").innerText;
+
+    let bytes = CryptoJS.AES.decrypt(cipher, key);
+    let decoded = bytes.toString(CryptoJS.enc.Utf8);
+
+    parent.querySelector(".decoded").innerText =
+        decoded || " Wrong Key";
+}
+
+/* ---------------- REALTIME ---------------- */
+function listenMessages() {
+    db.collection("rooms")
+      .doc(roomId)
+      .collection("messages")
+      .orderBy("time")
+      .onSnapshot(snapshot => {
+
+          document.getElementById("chatBox").innerHTML = "";
+
+          snapshot.forEach(doc => {
+              let data = doc.data();
+
+              createMessage(
+                  data.text,
+                  data.sender === userId ? "sent" : "received"
+              );
+          });
+      });
+}
 </script>
+
 </body>
 </html>

@@ -8,8 +8,11 @@
 
     <!-- 🔐 CryptoJS for real encryption -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-
+<button onclick="switchRoom()" style="float:right;">
+    🔄
+</button>
     <style>
+        
         body {
             font-family: Arial;
             background: #0f172a;
@@ -90,15 +93,23 @@ const db = firebase.firestore();
 
 /* ---------------- USER + ROOM ---------------- */
 let roomId = localStorage.getItem("roomId");
+let roomKey;
+
 if (!roomId) {
     roomId = prompt("Enter Room ID:");
-    localStorage.setItem("roomId", roomId);
+    if (roomId) {
+        localStorage.setItem("roomId", roomId);
+    }
 }
 
-let roomKey = localStorage.getItem("roomKey_" + roomId);
+// always fetch key AFTER roomId is confirmed
+roomKey = localStorage.getItem("roomKey_" + roomId);
+
 if (!roomKey) {
     roomKey = prompt("Enter Secret Room Key:");
-    localStorage.setItem("roomKey_" + roomId, roomKey);
+    if (roomKey) {
+        localStorage.setItem("roomKey_" + roomId, roomKey);
+    }
 }
 
 let userId = localStorage.getItem("userId");
@@ -107,6 +118,18 @@ if (!userId) {
     localStorage.setItem("userId", userId);
 }
 
+/* ---------------- SWITCH ROOM ---------------- */
+function switchRoom() {
+    // remove current room only if it exists
+    if (roomId) {
+        localStorage.removeItem("roomKey_" + roomId);
+    }
+
+    localStorage.removeItem("roomId");
+
+    // reload → fresh prompts
+    location.reload();
+}
 /* ---------------- ENCRYPT / DECRYPT ---------------- */
 function encrypt(text) {
     return CryptoJS.AES.encrypt(text, roomKey).toString();

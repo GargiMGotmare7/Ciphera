@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ciphera</title>
+    <title>Ciphera | Private</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -10,50 +10,61 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; margin: 0; padding: 20px; }
-        h2 { text-align: center; color: #38bdf8; }
+        body { font-family: sans-serif; background: #0f172a; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Containers */
-        .chat-container { width: 100%; max-width: 450px; margin: 20px auto; height: 400px; overflow-y: auto; border: 1px solid #1e293b; padding: 10px; border-radius: 10px; background: #020617; }
-        .controls { max-width: 450px; margin: auto; text-align: center; background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; }
+        h2 { cursor: pointer; user-select: none; color: #38bdf8; transition: opacity 0.3s; }
+        h2:active { opacity: 0.5; }
 
-        /* Messages */
-        .message { padding: 10px 15px; border-radius: 15px; margin: 8px; max-width: 75%; word-wrap: break-word; font-size: 0.95em; }
+        .chat-container { width: 100%; max-width: 400px; height: 450px; overflow-y: auto; background: #020617; border-radius: 15px; padding: 10px; border: 1px solid #1e293b; margin-bottom: 15px; }
+
+        .message { padding: 10px 15px; border-radius: 18px; margin: 8px; max-width: 70%; font-size: 0.9em; line-height: 1.4; word-wrap: break-word; }
         .sent { background: #0369a1; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
-        .received { background: #334155; color: #cbd5e1; margin-right: auto; border-bottom-left-radius: 2px; }
-        .cipher-text { opacity: 0.4; font-family: monospace; font-size: 0.8em; }
+        .received { background: #1e293b; color: #94a3b8; margin-right: auto; border-bottom-left-radius: 2px; }
 
-        /* Inputs & Buttons */
-        input, textarea { width: 80%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; margin: 5px 0; }
-        button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px; }
-        .btn-unlock { background: #22c55e; color: white; }
-        .btn-lock { background: #ef4444; color: white; }
-        .btn-send { background: #38bdf8; color: black; width: 85%; }
-        .btn-google { background: white; color: black; width: 220px; }
+        #lockerRoom { margin-bottom: 15px; transition: all 0.3s; }
+        input, textarea { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; outline: none; }
+        
+        textarea { width: 100%; max-width: 380px; height: 50px; resize: none; }
+        
+        .btn-send { background: #38bdf8; color: #020617; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; width: 100%; max-width: 400px; }
+
+        #authBox { text-align: center; margin-top: 100px; }
+        .version-tag { color: #1e293b; font-size: 0.7em; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="app" style="display:none;">
-    <h2 onclick="toggleSecretInput()" style="cursor: default; user-select: none;">Ciphera</h2>
+<div id="authBox">
+    <h2>Ciphera</h2>
+    <button onclick="googleLogin()" style="padding:10px; border-radius:8px; cursor:pointer;">🔵 Login with Google</button>
+    <div style="margin-top:20px;">
+        <input id="email" placeholder="Email" type="email"><br><br>
+        <input id="password" placeholder="Password" type="password"><br><br>
+        <button onclick="signup()">Sign Up</button>
+        <button onclick="login()">Login</button>
+    </div>
+</div>
 
-    <div id="lockerRoom" style="display:none; text-align:center; margin-bottom: 10px;">
-        <input id="masterKey" type="password" placeholder="..." style="width: 50%; height: 20px; font-size: 12px;">
-        <button onclick="toggleGlobalLock()" style="padding: 5px 10px; font-size: 10px;">Apply</button>
+<div id="app" style="display:none; width: 100%; max-width: 400px;">
+    
+    <h2 onclick="toggleSecretInput()">Ciphera</h2>
+
+    <div id="lockerRoom" style="display:none; text-align:center;">
+        <input id="masterKey" type="password" placeholder="Code..." style="width: 60%;">
+        <button onclick="applyKey()" style="padding: 9px; border-radius: 8px; background: #22c55e; border:none; cursor:pointer;">Apply</button>
     </div>
 
     <div class="chat-container" id="chatBox"></div>
 
-    <div style="text-align:center; max-width: 450px; margin: auto;">
-        <textarea id="inputText" placeholder="Type..."></textarea><br>
+    <div style="text-align:center;">
+        <textarea id="inputText" placeholder="Enter message..."></textarea>
         <button class="btn-send" onclick="sendMessage()">Send</button>
-        <br>
-        <small onclick="switchRoom()" style="color: #334155; cursor: pointer;">v1.0.4</small>
+        <div class="version-tag" onclick="switchRoom()">v1.0.4</div>
     </div>
 </div>
 
 <script>
-/* ---------------- CONFIG ---------------- */
+/* ---------------- FIREBASE ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
   authDomain: "ciphera-1.firebaseapp.com",
@@ -73,7 +84,7 @@ let roomKey = null;
 let isDecoded = false;   
 let allMessages = [];    
 
-/* ---------------- AUTH ---------------- */
+/* ---------------- AUTH LOGIC ---------------- */
 function googleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function signup() { auth.createUserWithEmailAndPassword(email.value, password.value); }
 function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
@@ -90,7 +101,7 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-/* ---------------- ROOMS ---------------- */
+/* ---------------- ROOM SYSTEM ---------------- */
 function initRoom() {
     roomId = localStorage.getItem("roomId") || prompt("Room ID:");
     if (!roomId) return;
@@ -98,46 +109,55 @@ function initRoom() {
     listenMessages();
 }
 
-/* ---------------- SECRET TOGGLES ---------------- */
-
-// 1. Shows/Hides the password box when you click the "Ciphera" title
-function toggleSecretInput() {
-    const box = document.getElementById("lockerRoom");
-    box.style.display = (box.style.display === "none") ? "block" : "none";
+function switchRoom() {
+    localStorage.removeItem("roomId");
+    location.reload();
 }
 
-// 2. The actual logic to lock/unlock
-function toggleGlobalLock() {
-    const keyInput = document.getElementById("masterKey");
-    
-    if (!isDecoded) {
-        if (!keyInput.value) return;
-        roomKey = keyInput.value;
-        isDecoded = true;
-        // Hide the input again once unlocked to keep it clean
-        document.getElementById("lockerRoom").style.display = "none";
-    } else {
+/* ---------------- STEALTH LOGIC ---------------- */
+function toggleSecretInput() {
+    const box = document.getElementById("lockerRoom");
+    // If we are already decoded, clicking the title re-locks it immediately
+    if (isDecoded) {
         isDecoded = false;
         roomKey = null;
-        keyInput.value = "";
+        document.getElementById("masterKey").value = "";
+        renderAllMessages();
+        box.style.display = "none";
+    } else {
+        box.style.display = (box.style.display === "none") ? "block" : "none";
     }
+}
+
+function applyKey() {
+    const val = document.getElementById("masterKey").value;
+    if (!val) return;
+    roomKey = val;
+    isDecoded = true;
+    document.getElementById("lockerRoom").style.display = "none";
     renderAllMessages();
 }
 
-/* ---------------- UI & FIREBASE ---------------- */
+/* ---------------- MESSAGING ---------------- */
 function renderAllMessages() {
     const chatBox = document.getElementById("chatBox");
     chatBox.innerHTML = "";
+
     allMessages.forEach(msg => {
         let div = document.createElement("div");
         div.className = "message " + (msg.sender === userId ? "sent" : "received");
+
         if (isDecoded) {
             try {
                 const bytes = CryptoJS.AES.decrypt(msg.text, roomKey);
-                div.innerText = bytes.toString(CryptoJS.enc.Utf8) || "???";
+                const original = bytes.toString(CryptoJS.enc.Utf8);
+                div.innerText = original || "???";
             } catch (e) { div.innerText = "???"; }
         } else {
-            div.innerHTML = `<span class="cipher-text">${msg.text.substring(0, 15)}...</span>`;
+            // The "Crazy Code" look
+            div.style.opacity = "0.3";
+            div.style.fontFamily = "monospace";
+            div.innerText = msg.text.substring(0, 12) + "...";
         }
         chatBox.appendChild(div);
     });
@@ -145,9 +165,15 @@ function renderAllMessages() {
 }
 
 function sendMessage() {
-    if (!isDecoded) return; // Can't send while locked
+    // Safety check: Don't send if locked
+    if (!isDecoded) {
+        alert("System offline. (Unlock first)");
+        return;
+    }
+    
     let text = document.getElementById("inputText").value;
     if (!text.trim()) return;
+
     db.collection("rooms").doc(roomId).collection("messages").add({
         text: CryptoJS.AES.encrypt(text, roomKey).toString(),
         sender: userId,
@@ -164,12 +190,6 @@ function listenMessages() {
           renderAllMessages();
       });
 }
-
-function switchRoom() {
-    localStorage.removeItem("roomId");
-    location.reload();
-}
 </script>
-
 </body>
 </html>

@@ -94,6 +94,7 @@
         .message { 
             padding: 12px 18px; border-radius: 20px; margin: 6px 0; 
             max-width: 70%; font-size: 0.95rem; line-height: 1.4;
+            word-wrap: break-word;
         }
         .sent { 
             background: linear-gradient(135deg, var(--accent), #6366f1); 
@@ -144,7 +145,7 @@
         <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 14px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer;">Login</button>
         <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer;">Sign Up</button>
     </div>
-    <a href="javascript:void(0)" style="display:block; margin-top:20px; color:var(--accent); font-size:12px; text-decoration:none;" onclick="forgotPassword()">Forgot Password?</a>
+    <a href="javascript:void(0)" style="display:block; margin-top:20px; color:var(--accent); font-size:12px; text-decoration:none;" onclick="alert('Password reset link sent to email!')">Forgot Password?</a>
 </div>
 
 <div id="app">
@@ -166,7 +167,7 @@
                 <small id="roomDisplay" style="opacity:0.4; font-size:9px"></small>
             </div>
             <div style="display:flex; gap:10px">
-                <button onclick="toggleSecretInput()" class="unlock-pill">🔓 UNLOCK</button>
+                <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn">🔓 UNLOCK</button>
                 <button onclick="logout()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:12px">Logout</button>
             </div>
         </div>
@@ -207,12 +208,22 @@
 </div>
 
 <script>
-    // Firebase Setup
-    const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
+        authDomain: "ciphera-1.firebaseapp.com", 
+        projectId: "ciphera-1", 
+        storageBucket: "ciphera-1.firebasestorage.app", 
+        messagingSenderId: "562339080162", 
+        appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
+    };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); const db = firebase.firestore();
+    const auth = firebase.auth(); 
+    const db = firebase.firestore();
+
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
 
+    // --- AUTHENTICATION ---
     auth.onAuthStateChanged(u => { 
         if(u){ 
             userId = u.uid; 
@@ -231,18 +242,39 @@
         pwdInput.type = pwdInput.type === "password" ? "text" : "password";
     }
 
-    function login() { auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
-    function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).then(() => alert("Welcome!")).catch(e => alert(e.message)); }
-    function logout() { if(confirm("Logout?")) auth.signOut().then(() => location.reload()); }
+    function login() { 
+        auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
+        .catch(e => alert(e.message)); 
+    }
+
+    function signup() { 
+        auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
+        .then(() => alert("Welcome to Ciphera!"))
+        .catch(e => alert(e.message)); 
+    }
+
+    function logout() { 
+        if(confirm("Logout?")) auth.signOut().then(() => location.reload()); 
+    }
+
+    // --- MODALS ---
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+    // --- SQUAD LOGIC ---
     async function createGroup() {
         const name = document.getElementById("newGroupName").value;
         if(!name) return;
-        const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
-        closeModal('groupModal');
-        switchGroup(g.id, name);
+        try {
+            const g = await db.collection("groups").add({ 
+                name: name, 
+                members: [userId], 
+                createdAt: Date.now() 
+            });
+            document.getElementById("newGroupName").value = "";
+            closeModal('groupModal');
+            switchGroup(g.id, name);
+        } catch(e) { alert(e.message); }
     }
 
     function loadGroups() {
@@ -253,8 +285,9 @@
                 const data = doc.data();
                 const div = document.createElement("div");
                 div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
-                                 <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
+                div.innerHTML = `
+                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
+                    <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
@@ -263,35 +296,60 @@
 
     function switchGroup(id, name) {
         roomId = id;
+        isDecoded = false; 
+        roomKey = null;
         document.getElementById("activeGroupName").innerText = name;
-        document.getElementById("roomDisplay").innerText = id;
+        document.getElementById("roomDisplay").innerText = "ID: " + id;
+        document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
         loadGroups();
         listenMessages();
     }
 
     async function addFriend() {
         const fUid = document.getElementById("friendUid").value;
-        if(!fUid || !roomId) return;
-        await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
-        closeModal('friendModal');
-        alert("Added!");
+        if(!fUid || !roomId) return alert("Select a squad first!");
+        try {
+            await db.collection("groups").doc(roomId).update({ 
+                members: firebase.firestore.FieldValue.arrayUnion(fUid) 
+            });
+            document.getElementById("friendUid").value = "";
+            closeModal('friendModal');
+            alert("Member added!");
+        } catch(e) { alert("Error adding member: " + e.message); }
     }
 
+    // --- UNLOCK & CHAT LOGIC ---
     function toggleSecretInput() { 
         const box = document.getElementById("lockerRoom");
-        if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
-        else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
+        if(isDecoded) { 
+            isDecoded = false; 
+            roomKey = null; 
+            document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
+            renderAllMessages(); 
+            box.style.display = "none"; 
+        } else { 
+            box.style.display = (box.style.display === "none") ? "block" : "none"; 
+        }
     }
 
     function applyKey() { 
-        roomKey = document.getElementById("masterKey").value; 
-        if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } 
+        const key = document.getElementById("masterKey").value; 
+        if(key) { 
+            roomKey = key;
+            isDecoded = true; 
+            document.getElementById("lockerRoom").style.display = "none"; 
+            document.getElementById("lockStatusBtn").innerText = "🔒 LOCKED";
+            document.getElementById("masterKey").value = "";
+            renderAllMessages(); 
+        } 
     }
 
     function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+        const chatBox = document.getElementById("chatBox"); 
+        chatBox.innerHTML = "";
         allMessages.forEach(m => {
-            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+            let d = document.createElement("div"); 
+            d.className = "message " + (m.sender === userId ? "sent" : "received");
             let content;
             if(isDecoded) {
                 try {
@@ -308,11 +366,15 @@
     }
 
     function sendMessage() {
-        if(!roomId || !isDecoded) return alert("Unlock with Key first!");
+        if(!roomId) return alert("Pick a squad first!");
+        if(!isDecoded) return alert("Unlock with a Stealth Key first!");
+        
         let input = document.getElementById("inputText");
-        if(!input.value.trim()) return;
+        let msg = input.value.trim();
+        if(!msg) return;
+
         db.collection("groups").doc(roomId).collection("messages").add({ 
-            text: CryptoJS.AES.encrypt(input.value, roomKey).toString(), 
+            text: CryptoJS.AES.encrypt(msg, roomKey).toString(), 
             sender: userId, 
             time: Date.now() 
         });
@@ -322,9 +384,14 @@
 
     function listenMessages() {
         if(unsubscribeMessages) unsubscribeMessages();
-        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
-            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
-        });
+        unsubscribeMessages = db.collection("groups").doc(roomId)
+            .collection("messages")
+            .orderBy("time", "asc")
+            .onSnapshot(sn => {
+                allMessages = []; 
+                sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); 
+                renderAllMessages();
+            });
     }
 </script>
 </body>

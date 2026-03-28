@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <title>Ciphera</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            margin-top: 20px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 15px;
+            margin: 10px;
+            max-width: 70%;
+            position: relative;
+        }
+
+        .sent {
+            background: #22c55e;
+            color: black;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .received {
+            background: #1e293b;
+            text-align: left;
+        }
+
+        textarea {
+            width: 80%;
+            height: 60px;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: #38bdf8;
+            margin: 5px;
+        }
+
+        input {
+            border-radius: 8px;
+            padding: 5px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="appContent">
+<h2>Your chats</h2>
+
+<div style="text-align:center;">
+    <textarea id="inputText" placeholder="Type message..."></textarea><br>
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="receiveMessage()">Fake Receive</button>
+</div>
+
+<div class="chat-container" id="chatBox"></div>
+
+<script>
+    // 🔥 Firebase setup
+const firebaseConfig = {
+  apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
+  authDomain: "ciphera-1.firebaseapp.com",
+  projectId: "ciphera-1",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let secret = "1234";
+
+function encode(text) {
+    let encoded = "";
+    for (let i = 0; i < text.length; i++) {
+        encoded += String.fromCharCode(text.charCodeAt(i) + 5);
+    }
+    return encoded;
+}
+
+function decode(text) {
+    let decoded = "";
+    for (let i = 0; i < text.length; i++) {
+        decoded += String.fromCharCode(text.charCodeAt(i) - 5);
+    }
+    return decoded;
+}
+
+function createMessage(encodedText, type) {
+
+    let msgDiv = document.createElement("div");
+    msgDiv.className = "message " + type;
+
+    msgDiv.innerHTML = `
+       <p class="encoded">${encodedText}</p>
+        <input type="password" placeholder="Code">
+        <button onclick="unlockMessage(this)">Unlock</button>
+        <p class="decoded"></p>
+    `;
+
+    document.getElementById("chatBox").appendChild(msgDiv);
+}
+
+function sendMessage() {
+    let text = document.getElementById("inputText").value;
+
+    if (text.trim() === "") return;
+
+    let encoded = encode(text);
+
+    db.collection("messages").add({
+        text: encoded,
+        sender: "me",
+        time: Date.now()
+    });
+
+    document.getElementById("inputText").value = "";
+}
+
+function receiveMessage() {
+    let fakeReplies = [
+        "ok got it",
+        "see you soon",
+        "Please send the Homework  ",
+        "That chapter's done",
+        "ttyl"
+    ];
+
+    let random = fakeReplies[Math.floor(Math.random() * fakeReplies.length)];
+    createMessage(random, "received");
+}
+
+function unlockMessage(button) {
+    let parent = button.parentElement;
+    let pass = parent.querySelector("input").value;
+
+    if (pass !== secret) {
+        parent.querySelector(".decoded").innerText = "Incorrect password";
+        return;
+    }
+
+    let encoded = parent.querySelector(".encoded").innerText;
+    let decoded = decode(encoded);
+
+    let decodedEl = parent.querySelector(".decoded");
+    decodedEl.innerText = decoded;
+
+    setTimeout(() => {
+        decodedEl.innerText = "";
+    }, 4000);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        lockMessages();
+    }
+});
+
+window.addEventListener("blur", () => {
+    lockMessages();
+});
+
+function lockMessages() {
+    let allDecoded = document.querySelectorAll(".decoded");
+    allDecoded.forEach(el => {
+        el.innerText = ""; // just clears it silently
+    });
+}
+db.collection("messages")
+.orderBy("time")
+.onSnapshot(snapshot => {
+    document.getElementById("chatBox").innerHTML = "";
+
+    snapshot.forEach(doc => {
+        let data = doc.data();
+
+       createMessage(data.text, data.sender === "me" ? "sent" : "received");
+    });
+});
+</script>
+</div>
+</body>
+</html>

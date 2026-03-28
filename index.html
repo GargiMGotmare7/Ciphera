@@ -15,8 +15,8 @@
             --bg: #020617;
             --sidebar: rgba(15, 23, 42, 0.6);
             --card: rgba(30, 41, 59, 0.4);
-            --accent: #38bdf8; /* Electric Blue */
-            --secondary: #c084fc; /* Soft Purple */
+            --accent: #38bdf8;
+            --secondary: #c084fc;
             --text: #f1f5f9;
             --glass-border: rgba(255, 255, 255, 0.1);
         }
@@ -49,7 +49,6 @@
             letter-spacing: -2px;
         }
 
-        /* --- INPUTS --- */
         input, textarea {
             width: 100%; padding: 14px; margin: 10px 0; 
             background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
@@ -145,7 +144,7 @@
         <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 14px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer;">Login</button>
         <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer;">Sign Up</button>
     </div>
-    <a href="javascript:void(0)" style="display:block; margin-top:20px; color:var(--accent); font-size:12px; text-decoration:none;" onclick="alert('Password reset link sent to email!')">Forgot Password?</a>
+    <a href="javascript:void(0)" style="display:block; margin-top:20px; color:var(--accent); font-size:12px; text-decoration:none;" onclick="alert('Check your email for a reset link.')">Forgot Password?</a>
 </div>
 
 <div id="app">
@@ -208,7 +207,6 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = { 
         apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
         authDomain: "ciphera-1.firebaseapp.com", 
@@ -223,7 +221,6 @@
 
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
 
-    // --- AUTHENTICATION ---
     auth.onAuthStateChanged(u => { 
         if(u){ 
             userId = u.uid; 
@@ -242,39 +239,23 @@
         pwdInput.type = pwdInput.type === "password" ? "text" : "password";
     }
 
-    function login() { 
-        auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
-        .catch(e => alert(e.message)); 
-    }
-
-    function signup() { 
-        auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
-        .then(() => alert("Welcome to Ciphera!"))
-        .catch(e => alert(e.message)); 
-    }
-
-    function logout() { 
-        if(confirm("Logout?")) auth.signOut().then(() => location.reload()); 
-    }
-
-    // --- MODALS ---
+    function login() { auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
+    function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).then(() => alert("Welcome!")).catch(e => alert(e.message)); }
+    function logout() { if(confirm("Logout?")) auth.signOut().then(() => location.reload()); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // --- SQUAD LOGIC ---
     async function createGroup() {
         const name = document.getElementById("newGroupName").value;
         if(!name) return;
         try {
-            const g = await db.collection("groups").add({ 
-                name: name, 
-                members: [userId], 
-                createdAt: Date.now() 
-            });
+            const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
             document.getElementById("newGroupName").value = "";
             closeModal('groupModal');
             switchGroup(g.id, name);
-        } catch(e) { alert(e.message); }
+        } catch(e) { 
+            alert("Permission Error: Ensure Firestore rules are set to public/auth in Firebase Console."); 
+        }
     }
 
     function loadGroups() {
@@ -285,9 +266,8 @@
                 const data = doc.data();
                 const div = document.createElement("div");
                 div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-                div.innerHTML = `
-                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
-                    <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
+                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
+                                 <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
@@ -299,7 +279,7 @@
         isDecoded = false; 
         roomKey = null;
         document.getElementById("activeGroupName").innerText = name;
-        document.getElementById("roomDisplay").innerText = "ID: " + id;
+        document.getElementById("roomDisplay").innerText = id;
         document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
         loadGroups();
         listenMessages();
@@ -307,36 +287,25 @@
 
     async function addFriend() {
         const fUid = document.getElementById("friendUid").value;
-        if(!fUid || !roomId) return alert("Select a squad first!");
+        if(!fUid || !roomId) return;
         try {
-            await db.collection("groups").doc(roomId).update({ 
-                members: firebase.firestore.FieldValue.arrayUnion(fUid) 
-            });
+            await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
             document.getElementById("friendUid").value = "";
             closeModal('friendModal');
-            alert("Member added!");
-        } catch(e) { alert("Error adding member: " + e.message); }
+            alert("Added!");
+        } catch(e) { alert(e.message); }
     }
 
-    // --- UNLOCK & CHAT LOGIC ---
     function toggleSecretInput() { 
         const box = document.getElementById("lockerRoom");
-        if(isDecoded) { 
-            isDecoded = false; 
-            roomKey = null; 
-            document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
-            renderAllMessages(); 
-            box.style.display = "none"; 
-        } else { 
-            box.style.display = (box.style.display === "none") ? "block" : "none"; 
-        }
+        if(isDecoded) { isDecoded = false; roomKey = null; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK"; renderAllMessages(); box.style.display = "none"; }
+        else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
     }
 
     function applyKey() { 
         const key = document.getElementById("masterKey").value; 
         if(key) { 
-            roomKey = key;
-            isDecoded = true; 
+            roomKey = key; isDecoded = true; 
             document.getElementById("lockerRoom").style.display = "none"; 
             document.getElementById("lockStatusBtn").innerText = "🔒 LOCKED";
             document.getElementById("masterKey").value = "";
@@ -345,11 +314,9 @@
     }
 
     function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); 
-        chatBox.innerHTML = "";
+        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
         allMessages.forEach(m => {
-            let d = document.createElement("div"); 
-            d.className = "message " + (m.sender === userId ? "sent" : "received");
+            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             let content;
             if(isDecoded) {
                 try {
@@ -366,15 +333,13 @@
     }
 
     function sendMessage() {
-        if(!roomId) return alert("Pick a squad first!");
-        if(!isDecoded) return alert("Unlock with a Stealth Key first!");
-        
+        if(!roomId) return alert("Select a squad!");
+        if(!isDecoded) return alert("Unlock first!");
         let input = document.getElementById("inputText");
-        let msg = input.value.trim();
-        if(!msg) return;
-
+        let txt = input.value.trim();
+        if(!txt) return;
         db.collection("groups").doc(roomId).collection("messages").add({ 
-            text: CryptoJS.AES.encrypt(msg, roomKey).toString(), 
+            text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
             sender: userId, 
             time: Date.now() 
         });
@@ -384,14 +349,13 @@
 
     function listenMessages() {
         if(unsubscribeMessages) unsubscribeMessages();
-        unsubscribeMessages = db.collection("groups").doc(roomId)
-            .collection("messages")
-            .orderBy("time", "asc")
-            .onSnapshot(sn => {
-                allMessages = []; 
-                sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); 
-                renderAllMessages();
-            });
+        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
+            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
+        }, (error) => {
+            if(error.code === 'permission-denied') {
+                alert("Permission Denied: Update your Firestore Rules in the Firebase Console!");
+            }
+        });
     }
 </script>
 </body>

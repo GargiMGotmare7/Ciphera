@@ -204,7 +204,7 @@
 
 <div id="groupModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0">New Squad</h3>
+        <h3 style="margin-top:0">New Chat</h3>
         <input id="newGroupName" placeholder="Group Name">
         <button onclick="createGroup()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:12px; font-weight:bold;">Create</button>
         <button onclick="closeModal('groupModal')" style="width:100%; margin-top:10px; background:none; border:none; color:white; opacity:0.5;">Cancel</button>
@@ -293,7 +293,7 @@
 
     async function deleteGroup(event, gId) {
         event.stopPropagation(); // Prevents the group from being selected while trying to delete it
-        if (confirm("Delete this squad? All messages will be lost.")) {
+        if (confirm("Delete this Chat? All messages will be lost.")) {
             try {
                 await db.collection("groups").doc(gId).delete();
                 if (roomId === gId) {
@@ -367,7 +367,7 @@
     }
 
     function sendMessage() {
-        if(!roomId) return alert("Select a squad!");
+        if(!roomId) return alert("Select a Chat!");
         if(!isDecoded) return alert("Unlock first!");
         let input = document.getElementById("inputText");
         let txt = input.value.trim();

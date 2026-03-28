@@ -16,3 +16,21 @@ document.getElementById('unlockBtn').addEventListener('click', toggleSecretInput
 // 4. Functions (Paste your login, createGroup, listenMessages functions here)
 function login() { /* ... */ }
 function sendMessage() { /* ... */ }
+
+// Function to transition from Home to Login
+document.getElementById('enterBtn').addEventListener('click', () => {
+    const hero = document.getElementById('hero');
+    const auth = document.getElementById('authBox');
+
+    // Simple fade transition
+    hero.style.transition = "opacity 0.5s ease";
+    hero.style.opacity = "0";
+
+    setTimeout(() => {
+        hero.style.display = "none";
+        auth.style.display = "block";
+        auth.style.opacity = "0";
+        // Fade in the auth box
+        setTimeout(() => { auth.style.opacity = "1"; }, 10);
+    }, 500);
+});

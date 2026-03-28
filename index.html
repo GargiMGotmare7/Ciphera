@@ -10,6 +10,7 @@
     <style>
         :root {
             --bg: #020617;
+            --sidebar: #0f172a;
             --card: rgba(30, 41, 59, 0.7);
             --accent: #38bdf8;
             --secondary: #c084fc;
@@ -18,73 +19,88 @@
 
         body {
             font-family: 'Inter', system-ui, sans-serif;
-            background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
+            background: var(--bg);
             color: var(--text);
             margin: 0;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            height: 100vh;
             overflow: hidden;
         }
 
+        /* --- AUTH BOX --- */
         #authBox {
-            background: var(--card);
-            backdrop-filter: blur(12px);
-            padding: 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            width: 320px;
-            animation: fadeIn 0.8s ease-out;
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--card); backdrop-filter: blur(12px);
+            padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center; width: 320px; z-index: 100;
         }
 
-        h2 {
-            font-size: 2.5rem;
-            letter-spacing: -2px;
-            margin: 10px 0 20px 0;
-            background: linear-gradient(to right, var(--accent), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            cursor: pointer;
+        /* --- MAIN LAYOUT --- */
+        #app { display: none; width: 100%; height: 100%; flex-direction: row; }
+
+        /* SIDEBAR (WhatsApp Style) */
+        .sidebar {
+            width: 350px;
+            background: var(--sidebar);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
         }
 
-        .theme-picker { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
-        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 0.7rem; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 20px; cursor: pointer; z-index: 10; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; color: white; box-sizing: border-box; }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        #app { width: 95%; max-width: 450px; display: none; position: relative; height: 90vh; flex-direction: column; }
+        .group-list { flex: 1; overflow-y: auto; padding: 10px; }
         
-        /* NEW: Dashboard Styles */
-        #dashboard { background: rgba(15, 23, 42, 0.5); border-radius: 20px; padding: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .group-item { background: var(--card); padding: 8px 12px; border-radius: 10px; cursor: pointer; margin: 5px; font-size: 0.8rem; border: 1px solid transparent; display: inline-block; transition: 0.3s; }
-        .group-item:hover { border-color: var(--accent); }
-        .active-group { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); }
+        .group-item {
+            padding: 15px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .group-item:hover { background: rgba(255,255,255,0.05); }
+        .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
 
-        .chat-container { flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.8); border-radius: 24px; padding: 15px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.05); }
-        .message { padding: 12px 16px; border-radius: 18px; margin: 10px 0; max-width: 80%; font-size: 0.9rem; position: relative; word-wrap: break-word; }
+        /* CHAT AREA */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); }
+        
+        .chat-header { padding: 15px 25px; background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+
+        /* MESSAGES */
+        .message { padding: 12px 16px; border-radius: 18px; margin: 8px 0; max-width: 70%; font-size: 0.9rem; position: relative; }
         .sent { background: linear-gradient(135deg, var(--accent), var(--secondary)); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
         .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
-        .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: none; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg); }
-        .message:hover .del-btn { display: flex; }
 
-        .input-area { display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border-radius: 28px; padding: 8px 12px; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.1); }
-        textarea { flex: 1; background: transparent !important; border: none !important; color: white; padding: 10px; height: 24px; max-height: 120px; resize: none; outline: none; font-size: 0.95rem; font-family: inherit; }
-        .btn-circle { background: var(--accent) !important; color: var(--bg) !important; width: 38px; height: 38px; min-width: 38px; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; margin: 0 0 2px 8px !important; cursor: pointer; border: none; transition: 0.2s; }
-        .btn-circle:hover { transform: scale(1.05); filter: brightness(1.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* INPUT AREA */
+        .input-area { padding: 20px; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; gap: 10px; }
+        textarea { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 20px; color: white; padding: 12px 20px; resize: none; outline: none; height: 20px; }
+
+        /* MODALS (Built-in instead of Chrome Prompt) */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center;
+        }
+        .modal-content { background: var(--sidebar); padding: 30px; border-radius: 20px; width: 300px; border: 1px solid var(--accent); }
+
+        .btn-circle { background: var(--accent); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: white; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div id="authBox">
-    <div class="theme-picker">
-        <div class="dot" style="background:#38bdf8" onclick="setTheme('blue')"></div>
-        <div class="dot" style="background:#f472b6" onclick="setTheme('pink')"></div>
-        <div class="dot" style="background:#4ade80" onclick="setTheme('green')"></div>
-    </div>
     <h2>Ciphera</h2>
     <input id="email" placeholder="Email" type="email">
     <input id="password" placeholder="Password" type="password">
@@ -92,33 +108,63 @@
 </div>
 
 <div id="app">
-    <div class="logout-btn" onclick="logout()">Logout</div>
-    <h2 onclick="toggleSecretInput()" style="text-align:center;">Ciphera</h2>
-    
-    <div id="dashboard">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 0.8rem; font-weight: bold; color: var(--accent);">MY GROUPS</span>
-            <button onclick="createGroup()" style="background:none; border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; font-size: 0.7rem; cursor: pointer; padding: 2px 8px;">+ New</button>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3 style="margin:0; color:var(--accent)">Chats</h3>
+            <button onclick="openModal('groupModal')" class="btn-circle" style="width:30px; height:30px; font-size:20px">+</button>
         </div>
-        <div id="groupList" style="white-space: nowrap; overflow-x: auto; padding-bottom: 5px;"></div>
+        <div class="group-list" id="groupList">
+            </div>
+        <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; opacity: 0.5;">
+            UID: <span id="myUidDisplay">...</span>
+        </div>
     </div>
 
-    <div id="lockerRoom" style="display:none; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; margin-bottom: 10px;">
-        <input id="masterKey" type="password" placeholder="Locker Key..." style="width: 70%; text-align: center;">
-        <button onclick="applyKey()" style="background: var(--secondary); color: white; width: auto; padding: 10px 20px; border-radius: 12px; border:none; cursor:pointer;">Unlock</button>
-        <button onclick="addFriend()" style="background: var(--accent); color: var(--bg); margin-top: 10px; font-size: 0.7rem; border:none; padding:5px; border-radius:8px; cursor:pointer;">👤 ADD FRIEND TO GROUP</button>
-        <button onclick="nukeChat()" style="background: #ef4444; margin-top: 10px; font-size: 0.7rem; border:none; padding:5px; border-radius:8px; color:white; cursor:pointer; margin-left: 5px;">☢️ NUKE</button>
-    </div>
+    <div class="main-chat">
+        <div class="chat-header">
+            <div>
+                <b id="activeGroupName">Select a chat</b><br>
+                <small id="roomDisplay" style="opacity:0.5; font-size:10px"></small>
+            </div>
+            <div style="display:flex; gap:10px">
+                <button onclick="toggleSecretInput()" style="background:none; border:1px solid var(--secondary); color:var(--secondary); padding:5px 10px; border-radius:10px; cursor:pointer; font-size:12px">🔓 Unlock</button>
+                <button onclick="logout()" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:5px 10px; border-radius:10px; cursor:pointer; font-size:12px">Logout</button>
+            </div>
+        </div>
 
-    <div class="chat-container" id="chatBox"></div>
+        <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.2); text-align: center;">
+            <input id="masterKey" type="password" placeholder="Enter Stealth Key..." style="width:200px">
+            <button onclick="applyKey()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; cursor:pointer">Apply</button>
+            <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-left:5px">Add Member</button>
+        </div>
 
-    <div class="input-area">
-        <textarea id="inputText" placeholder="Enter message..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-        <button class="btn-circle" onclick="sendMessage()">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
-        </button>
+        <div class="chat-container" id="chatBox"></div>
+
+        <div class="input-area">
+            <textarea id="inputText" placeholder="Message..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+            <button class="btn-circle" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
+            </button>
+        </div>
     </div>
-    <div style="font-size: 0.6rem; opacity: 0.2; text-align: center; cursor: pointer; padding-bottom: 10px;">v1.1.0 • ROOM: <span id="roomDisplay"></span></div>
+</div>
+
+<div id="groupModal" class="modal">
+    <div class="modal-content">
+        <h3>New Group</h3>
+        <input id="newGroupName" placeholder="Group Name">
+        <button onclick="createGroup()" style="width:100%; padding:10px; background:var(--accent); border:none; border-radius:10px;">Create</button>
+        <button onclick="closeModal('groupModal')" style="width:100%; margin-top:5px; background:none; border:none; color:white;">Cancel</button>
+    </div>
+</div>
+
+<div id="friendModal" class="modal">
+    <div class="modal-content">
+        <h3>Add Member</h3>
+        <input id="friendUid" placeholder="Paste Friend UID">
+        <button onclick="addFriend()" style="width:100%; padding:10px; background:var(--accent); border:none; border-radius:10px;">Add to Group</button>
+        <button onclick="closeModal('friendModal')" style="width:100%; margin-top:5px; background:none; border:none; color:white;">Cancel</button>
+    </div>
 </div>
 
 <script>
@@ -127,20 +173,13 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); const db = firebase.firestore();
 let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
 
-/* --- THEMES --- */
-function setTheme(t) {
-    const root = document.documentElement;
-    const th = { blue: { a: '#38bdf8', s: '#c084fc', b: '#020617' }, pink: { a: '#f472b6', s: '#fb7185', b: '#0f0505' }, green: { a: '#4ade80', s: '#2dd4bf', b: '#050f05' } };
-    root.style.setProperty('--accent', th[t].a); root.style.setProperty('--secondary', th[t].s); root.style.setProperty('--bg', th[t].b);
-}
-
-/* --- AUTH --- */
 auth.onAuthStateChanged(u => { 
     if(u){ 
         userId = u.uid; 
+        document.getElementById("myUidDisplay").innerText = userId;
         document.getElementById("authBox").style.display="none"; 
         document.getElementById("app").style.display="flex"; 
-        loadGroups(); // NEW
+        loadGroups();
     } else { 
         document.getElementById("authBox").style.display="block"; 
         document.getElementById("app").style.display="none"; 
@@ -150,12 +189,17 @@ auth.onAuthStateChanged(u => {
 function login() { auth.signInWithEmailAndPassword(email.value, password.value).catch(e => alert(e.message)); }
 function logout() { if(confirm("Sign out?")) auth.signOut().then(() => location.reload()); }
 
-/* --- NEW: GROUP ENGINE --- */
+/* --- MODAL CONTROL --- */
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+/* --- GROUP LOGIC --- */
 async function createGroup() {
-    const name = prompt("Group Name:");
+    const name = document.getElementById("newGroupName").value;
     if(!name) return;
     const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
-    switchGroup(g.id);
+    closeModal('groupModal');
+    switchGroup(g.id, name);
 }
 
 function loadGroups() {
@@ -166,30 +210,31 @@ function loadGroups() {
             const data = doc.data();
             const div = document.createElement("div");
             div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-            div.innerText = data.name;
-            div.onclick = () => switchGroup(doc.id);
+            div.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--secondary); display:flex; align-items:center; justify-content:center; font-weight:bold">${data.name[0].toUpperCase()}</div>
+                             <div><b>${data.name}</b></div>`;
+            div.onclick = () => switchGroup(doc.id, data.name);
             list.appendChild(div);
         });
     });
 }
 
-function switchGroup(id) {
+function switchGroup(id, name) {
     roomId = id;
+    document.getElementById("activeGroupName").innerText = name;
     document.getElementById("roomDisplay").innerText = id;
-    loadGroups(); // Refresh active state
+    loadGroups();
     listenMessages();
 }
 
 async function addFriend() {
-    const friendUid = prompt("Enter Friend's UID:");
-    if(!friendUid || !roomId) return;
-    await db.collection("groups").doc(roomId).update({
-        members: firebase.firestore.FieldValue.arrayUnion(friendUid)
-    });
-    alert("Added!");
+    const fUid = document.getElementById("friendUid").value;
+    if(!fUid || !roomId) return;
+    await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
+    closeModal('friendModal');
+    alert("Member Added!");
 }
 
-/* --- ENGINE --- */
+/* --- CHAT ENGINE (Unchanged Logic) --- */
 function toggleSecretInput() { 
     const box = document.getElementById("lockerRoom");
     if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
@@ -214,16 +259,14 @@ function renderAllMessages() {
         } else {
             content = `<span style="opacity:0.3; font-family:monospace;">${m.text.substring(0,12)}...</span>`;
         }
-        let delBtn = (m.sender === userId) ? `<div class="del-btn" onclick="deleteMsg('${m.id}')">×</div>` : "";
-        d.innerHTML = `${delBtn}<div>${content}</div>`;
+        d.innerHTML = `<div>${content}</div>`;
         chatBox.appendChild(d);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function sendMessage() {
-    if(!roomId) return alert("Select a group first!");
-    if(!isDecoded) return alert("Unlock first!");
+    if(!roomId || !isDecoded) return alert("Select group and Unlock with Key first!");
     let input = document.getElementById("inputText");
     if(!input.value.trim()) return;
     db.collection("groups").doc(roomId).collection("messages").add({ 
@@ -231,19 +274,15 @@ function sendMessage() {
         sender: userId, 
         time: Date.now() 
     });
-    input.value = ""; input.style.height = "24px";
+    input.value = "";
 }
 
 function listenMessages() {
-    if(unsubscribeMessages) unsubscribeMessages(); // Stop previous listener
+    if(unsubscribeMessages) unsubscribeMessages();
     unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
         allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
     });
 }
-
-function deleteMsg(id) { if(confirm("Delete?")) db.collection("groups").doc(roomId).collection("messages").doc(id).delete(); }
-function nukeChat() { if(confirm("☢️ NUKE EVERYTHING?")) db.collection("groups").doc(roomId).collection("messages").get().then(sn => sn.forEach(doc => doc.ref.delete())); }
 </script>
-
 </body>
 </html>

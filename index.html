@@ -115,7 +115,7 @@ Continue with Google
 
 
 <script>
-
+// 1. Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
   authDomain: "ciphera-1.firebaseapp.com",
@@ -127,218 +127,133 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// 2. Global Variables (Accessible by all functions)
+let userId = null;
+let roomId = null;
+let roomKey = null;
 
-function googleLogin(){
-
-const provider = new firebase.auth.GoogleAuthProvider();
-
-auth.signInWithPopup(provider)
-.then(res => console.log("Google login success", res.user))
-.catch(err => {
-    console.log(err);
-    alert(err.message);
-});
+// 3. Auth Logic
+function googleLogin() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => alert(err.message));
 }
 
-
-function signup(){
-
-auth.createUserWithEmailAndPassword(
-email.value,
-password.value
-).catch(err=>alert(err.message));
-
+function signup() {
+  auth.createUserWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
 }
 
-function login(){
-
-auth.signInWithEmailAndPassword(
-email.value,
-password.value
-).catch(err=>alert(err.message));
-
+function login() {
+  auth.signInWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
 }
 
-
-let userId=null;
-let roomId;
-let roomKey;
-
-
-auth.onAuthStateChanged(user=>{
-
-if(user){
-
-document.getElementById("authBox").style.display="none";
-document.getElementById("app").style.display="block";
-
-userId=user.uid;
-
-initRoom();
-
-}else{
-
-document.getElementById("authBox").style.display="block";
-document.getElementById("app").style.display="none";
-
-}
-
+auth.onAuthStateChanged(user => {
+  if (user) {
+    userId = user.uid;
+    document.getElementById("authBox").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    initRoom();
+  } else {
+    document.getElementById("authBox").style.display = "block";
+    document.getElementById("app").style.display = "none";
+  }
 });
 
+// 4. Room Management
+function initRoom() {
+  roomId = localStorage.getItem("roomId");
+  if (!roomId) {
+    roomId = prompt("Enter Room ID:");
+    if (!roomId) return;
+    localStorage.setItem("roomId", roomId);
+  }
 
-function initRoom(){
-
-roomId=localStorage.getItem("roomId");
-
-if(!roomId){
-
-roomId=prompt("Enter Room ID:");
-if(!roomId)return;
-
-localStorage.setItem("roomId",roomId);
-
+  roomKey = localStorage.getItem("roomKey_" + roomId);
+  if (!roomKey) {
+    roomKey = prompt("Enter Room Key:");
+    if (!roomKey) return;
+    localStorage.setItem("roomKey_" + roomId, roomKey);
+  }
+  listenMessages();
 }
 
-roomKey=localStorage.getItem("roomKey_"+roomId);
-
-if(!roomKey){
-
-roomKey=prompt("Enter Room Key:");
-if(!roomKey)return;
-
-localStorage.setItem("roomKey_"+roomId,roomKey);
-
+function switchRoom() {
+  localStorage.removeItem("roomId");
+  // We don't necessarily remove the key so it's remembered next time you enter that ID
+  location.reload();
 }
 
-/**
- * Captures the user input, encrypts it using the AES roomKey,
- * and saves the ciphertext to the Firestore database.
- */
-function sendMessage() {
-    const input = document.getElementById("inputText");
-    const text = input.value.trim();
-
-    // 1. Validation: Don't send empty messages or if we aren't in a room
-    if (!text || !roomId || !roomKey) return;
-
-    // 2. Encrypt the message using your CryptoJS logic
-    const secretMessage = encrypt(text);
-
-    // 3. Add the message to the specific room's sub-collection
-    db.collection("rooms")
-        .doc(roomId)
-        .collection("messages")
-        .add({
-            text: secretMessage,     // The encrypted "secret language"
-            sender: userId,          // Your Firebase UID
-            time: Date.now()         // Timestamp for ordering
-        })
-        .then(() => {
-            // 4. Clear the input field for the next message
-            input.value = "";
-        })
-        .catch(err => {
-            console.error("Error sending message: ", err);
-            alert("Failed to send message.");
-        });
+// 5. Encryption Engine
+function encrypt(text) {
+  return CryptoJS.AES.encrypt(text, roomKey).toString();
 }
 
-listenMessages();
-
-}
-
-
-function switchRoom(){
-
-localStorage.removeItem("roomKey_"+roomId);
-localStorage.removeItem("roomId");
-
-location.reload();
-
-}
-
-
-function encrypt(text){
-
-return CryptoJS.AES.encrypt(text,roomKey).toString();
-
-}
-
-
-function decrypt(cipher){
-
-try {
+function decrypt(cipher) {
+  try {
     let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
     let decoded = bytes.toString(CryptoJS.enc.Utf8);
-
     return decoded || null;
-} catch (e) {
+  } catch (e) {
     return null;
+  }
 }
 
+// 6. Messaging Logic
+function sendMessage() {
+  const input = document.getElementById("inputText");
+  const text = input.value.trim();
+
+  if (!text || !roomId || !roomKey) return;
+
+  // Encrypt the text into "secret language"
+  const secretMessage = encrypt(text);
+
+  db.collection("rooms").doc(roomId).collection("messages").add({
+    text: secretMessage,
+    sender: userId,
+    time: Date.now()
+  })
+  .then(() => {
+    input.value = ""; // Clear input after sending
+  })
+  .catch(err => alert("Error: " + err.message));
 }
 
-
-function createMessage(cipher,type,time){
-
-let decrypted=decrypt(cipher);
-
-let div=document.createElement("div");
-div.className="message "+type;
-
-div.innerHTML=`
-<div>${decrypted || "Unable to decrypt"}</div>
-<div class="time">${new Date(time).toLocaleTimeString()}</div>
-`;
-
-document.getElementById("chatBox").appendChild(div);
-
+function listenMessages() {
+  db.collection("rooms").doc(roomId).collection("messages")
+    .orderBy("time", "asc")
+    .onSnapshot(snapshot => {
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        createMessage(data.text, data.sender === userId ? "sent" : "received", data.time);
+      });
+      // Scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
 }
 
+function createMessage(cipher, type, time) {
+  const decrypted = decrypt(cipher);
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.innerHTML = `
+    <div>${decrypted || "<i>[Locked Message]</i>"}</div>
+    <div class="time">${new Date(time).toLocaleTimeString()}</div>
+  `;
+  document.getElementById("chatBox").appendChild(div);
+}
 
-function listenMessages(){
-
-db.collection("rooms")
-.doc(roomId)
-.collection("messages")
-.orderBy("time", "asc")
-.onSnapshot(snapshot=>{
-
-document.getElementById("chatBox").innerHTML="";
-
-snapshot.forEach(doc=>{
-
-let data=doc.data();
-
-createMessage(
-data.text,
-data.sender===userId?"sent":"received",
-data.time
-);
-
+// 7. Event Listeners
+document.getElementById("inputText").addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
-
-});
-
-}
-
-
-document.getElementById("inputText").addEventListener("keydown",function(e){
-
-if(e.key==="Enter"&&!e.shiftKey){
-
-e.preventDefault();
-sendMessage();
-
-}
-
-});
-
 </script>
-
 </body>
 </html>

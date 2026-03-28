@@ -137,8 +137,11 @@ function googleLogin(){
 const provider = new firebase.auth.GoogleAuthProvider();
 
 auth.signInWithPopup(provider)
-.catch(err=>alert(err.message));
-
+.then(res => console.log("Google login success", res.user))
+.catch(err => {
+    console.log(err);
+    alert(err.message);
+});
 }
 
 
@@ -235,40 +238,14 @@ return CryptoJS.AES.encrypt(text,roomKey).toString();
 
 function decrypt(cipher){
 
-try{
+try {
+    let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
+    let decoded = bytes.toString(CryptoJS.enc.Utf8);
 
-let bytes=CryptoJS.AES.decrypt(cipher,roomKey);
-let decoded=bytes.toString(CryptoJS.enc.Utf8);
-
-return decoded;
-
-}catch{
-
-return null;
-
+    return decoded || null;
+} catch (e) {
+    return null;
 }
-
-}
-
-
-function sendMessage(){
-
-let text=document.getElementById("inputText").value;
-
-if(!text.trim())return;
-
-db.collection("rooms")
-.doc(roomId)
-.collection("messages")
-.add({
-
-text:encrypt(text),
-sender:userId,
-time:Date.now()
-
-});
-
-document.getElementById("inputText").value="";
 
 }
 
@@ -295,7 +272,7 @@ function listenMessages(){
 db.collection("rooms")
 .doc(roomId)
 .collection("messages")
-.orderBy("time")
+.orderBy("time", "asc")
 .onSnapshot(snapshot=>{
 
 document.getElementById("chatBox").innerHTML="";

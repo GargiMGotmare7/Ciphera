@@ -102,6 +102,9 @@
 
         .btn-circle { background: var(--accent); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: white; box-sizing: border-box; }
+        
+        /* New helper for auth buttons */
+        .auth-buttons { display: flex; gap: 10px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -110,7 +113,11 @@
     <h2>Ciphera</h2>
     <input id="email" placeholder="Email" type="email">
     <input id="password" placeholder="Password" type="password">
-    <button onclick="login()" style="background:var(--accent); color:var(--bg); padding:12px; border-radius:12px; width:100%; border:none; font-weight:bold; cursor:pointer;">Login</button>
+    
+    <div class="auth-buttons">
+        <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer;">Login</button>
+        <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer;">Sign Up</button>
+    </div>
     
     <a href="javascript:void(0)" class="forgot-link" onclick="forgotPassword()">Forgot Password?</a>
 </div>
@@ -194,6 +201,17 @@ auth.onAuthStateChanged(u => {
 });
 
 function login() { auth.signInWithEmailAndPassword(email.value, password.value).catch(e => alert(e.message)); }
+
+/* --- SIGN UP LOGIC --- */
+function signup() {
+    if (!email.value || !password.value) {
+        alert("Please enter an email and password to sign up.");
+        return;
+    }
+    auth.createUserWithEmailAndPassword(email.value, password.value)
+        .then(() => alert("Account Created!"))
+        .catch(e => alert(e.message));
+}
 
 /* --- FORGOT PASSWORD LOGIC --- */
 function forgotPassword() {

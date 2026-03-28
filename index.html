@@ -1,171 +1,199 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ciphera | Social</title>
+    <title>Ciphera | Premium</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
-        :root { --bg: #020617; --card: rgba(30, 41, 59, 0.7); --accent: #38bdf8; --secondary: #c084fc; --text: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        :root { --bg: #030712; --card: rgba(17, 24, 39, 0.8); --accent: #38bdf8; --secondary: #c084fc; --text: #f8fafc; }
         
-        #authBox { background: var(--card); backdrop-filter: blur(12px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 320px; }
-        h2 { font-size: 2.5rem; letter-spacing: -2px; margin: 10px 0; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at top right, #1e1b4b, #030712); 
+            color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+        }
+
+        /* ✨ PREMIUM UI COMPONENTS */
+        #app { width: 95%; max-width: 480px; height: 92vh; display: none; flex-direction: column; animation: slideUp 0.6s ease; }
+
+        .glass { background: var(--card); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; }
+
+        .profile-header { 
+            display: flex; align-items: center; padding: 15px 20px; margin-bottom: 10px; gap: 12px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-glow { 
+            width: 45px; height: 45px; border-radius: 50%; object-fit: cover; 
+            border: 2px solid var(--accent); box-shadow: 0 0 15px var(--accent); 
+        }
+
+        .chat-container { 
+            flex: 1; overflow-y: auto; padding: 20px; margin: 10px 0; 
+            scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
+        }
+
+        /* 💬 BUBBLE DESIGN */
+        .msg-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 18px; animation: pop 0.3s ease; }
+        .msg-row.sent { flex-direction: row-reverse; }
         
-        #app { width: 95%; max-width: 450px; height: 90vh; display: none; flex-direction: column; position: relative; }
-        
-        /* 👤 PROFILE HEADER */
-        .profile-bar { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 10px; transition: 0.3s; }
-        .profile-bar:hover { background: rgba(255,255,255,0.1); }
-        .avatar-sm { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+        .bubble { 
+            padding: 12px 16px; border-radius: 20px; font-size: 0.95rem; line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative;
+        }
+        .sent .bubble { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: #000; border-bottom-right-radius: 4px; font-weight: 500; }
+        .received .bubble { background: rgba(255,255,255,0.08); color: #fff; border-bottom-left-radius: 4px; }
 
-        .chat-container { flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.8); border-radius: 24px; padding: 15px; margin: 5px 0; border: 1px solid rgba(255,255,255,0.05); }
+        /* 🛠 PROFILE/CROP MODAL */
+        #profileModal { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+            backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-content { 
+            background: #111827; padding: 30px; border-radius: 32px; width: 85%; max-width: 350px; 
+            text-align: center; border: 1px solid var(--accent); 
+        }
 
-        /* 💬 MESSAGE BUBBLES WITH AVATARS */
-        .msg-wrapper { display: flex; align-items: flex-end; gap: 8px; margin: 12px 0; }
-        .msg-wrapper.sent { flex-direction: row-reverse; }
-        .avatar-chat { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
-        
-        .message { padding: 10px 14px; border-radius: 18px; max-width: 70%; font-size: 0.9rem; position: relative; }
-        .sent .message { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
-        .received .message { background: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; }
-        .sender-name { font-size: 0.65rem; opacity: 0.5; margin-bottom: 2px; display: block; }
+        /* 📸 CROP/ADJUST PREVIEW */
+        .crop-preview-wrap { 
+            width: 120px; height: 120px; margin: 20px auto; border-radius: 50%; 
+            overflow: hidden; border: 3px solid var(--accent); position: relative;
+        }
+        #cropPreview { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
 
-        .input-area { display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.7); border-radius: 28px; padding: 8px 12px; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.1); }
-        textarea { flex: 1; background: transparent !important; border: none !important; color: white; padding: 10px; height: 24px; max-height: 120px; resize: none; outline: none; }
-        .btn-circle { background: var(--accent); color: var(--bg); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+        .slider { width: 100%; margin: 15px 0; accent-color: var(--accent); }
 
-        /* ⚙️ PROFILE MODAL */
-        #profileModal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e293b; padding: 30px; border-radius: 24px; width: 80%; z-index: 100; border: 1px solid var(--accent); box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem; }
+        .btn-prime { 
+            background: var(--accent); color: #000; border: none; padding: 12px; 
+            border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div id="authBox">
-    <h2>Ciphera</h2>
-    <input id="email" placeholder="Email" type="email">
-    <input id="password" placeholder="Password" type="password">
-    <button onclick="login()" style="background:var(--accent); color:var(--bg); padding:12px; border-radius:12px; width:100%; border:none; font-weight:bold; cursor:pointer;">Login</button>
+<div id="authBox" class="glass" style="padding: 40px; text-align: center; width: 320px;">
+    <h2 style="font-size: 2.8rem; margin:0 0 20px 0; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; color: transparent;">Ciphera</h2>
+    <input id="email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; background:rgba(255,255,255,0.05); border:1px solid #334155; border-radius:12px; color:white;">
+    <input id="password" type="password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:10px; background:rgba(255,255,255,0.05); border:1px solid #334155; border-radius:12px; color:white;">
+    <button onclick="login()" class="btn-prime">Sign In</button>
 </div>
 
 <div id="app">
-    <div class="profile-bar" onclick="openProfile()">
-        <img id="myAvatar" src="https://ui-avatars.com/api/?name=User" class="avatar-sm">
-        <div style="flex:1"><b id="myName">Loading...</b><div style="font-size:0.7rem; opacity:0.5;">Tap to Edit Profile</div></div>
-        <div onclick="logout(event)" style="font-size:0.7rem; color:#ef4444; border:1px solid; padding:4px 8px; border-radius:10px;">Logout</div>
-    </div>
-
-    <h2 onclick="toggleSecretInput()" style="text-align:center; font-size: 1.5rem;">Ciphera</h2>
-    
-    <div id="lockerRoom" style="display:none; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; margin-bottom: 10px;">
-        <input id="masterKey" type="password" placeholder="Locker Key..." style="width: 70%; text-align: center; background: #0f172a; color:white; border:none; padding:8px; border-radius:10px;">
-        <button onclick="applyKey()" style="background: var(--secondary); color: white; padding: 8px 15px; border-radius: 10px; border:none; cursor:pointer; margin-top:10px;">Unlock Room</button>
+    <div class="profile-header glass">
+        <img id="myAvatar" src="" class="avatar-glow" onclick="openProfile()">
+        <div style="flex:1" onclick="openProfile()">
+            <div id="myName" style="font-weight: bold; font-size: 1.1rem;">User</div>
+            <div style="font-size: 0.7rem; color: var(--accent);">Status: Stealth</div>
+        </div>
+        <div onclick="logout()" style="opacity:0.5; cursor:pointer;">🚪</div>
     </div>
 
     <div class="chat-container" id="chatBox"></div>
 
-    <div class="input-area">
-        <textarea id="inputText" placeholder="Message..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-        <button class="btn-circle" onclick="sendMessage()">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
+    <div class="glass" style="display:flex; align-items:center; padding:8px 15px; border-radius: 40px; margin-bottom: 20px;">
+        <textarea id="inputText" placeholder="Type a message..." style="flex:1; background:transparent; border:none; color:white; resize:none; outline:none; padding:10px;"></textarea>
+        <button onclick="sendMessage()" style="background:var(--accent); border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
         </button>
     </div>
+</div>
 
-    <div id="profileModal">
-        <span class="close-btn" onclick="closeProfile()">×</span>
-        <h3>Update Profile</h3>
-        <input id="editName" placeholder="Display Name">
-        <input id="editPic" placeholder="Profile Pic URL (e.g. Pinterest/Discord link)">
-        <button onclick="saveProfile()" style="background:var(--accent); color:var(--bg); border:none; font-weight:bold; padding:10px; border-radius:10px; width:100%; margin-top:10px;">Save Profile</button>
+<div id="profileModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Adjust Profile</h3>
+        
+        <div class="crop-preview-wrap">
+            <img id="cropPreview" src="https://ui-avatars.com/api/?name=User">
+        </div>
+        
+        <p style="font-size: 0.7rem; opacity: 0.6;">Zoom to Adjust Crop</p>
+        <input type="range" class="slider" min="1" max="3" step="0.1" value="1" oninput="adjustZoom(this.value)">
+        
+        <input id="editName" placeholder="Username" style="width:100%; padding:10px; border-radius:10px; border:1px solid #334155; background:#000; color:white; margin-bottom:10px;">
+        <input id="editPic" placeholder="Paste Image URL" oninput="updatePreview(this.value)" style="width:100%; padding:10px; border-radius:10px; border:1px solid #334155; background:#000; color:white;">
+        
+        <button class="btn-prime" onclick="saveProfile()">Apply Changes</button>
+        <button onclick="closeProfile()" style="background:transparent; color:white; border:none; margin-top:15px; cursor:pointer; opacity:0.5;">Cancel</button>
     </div>
 </div>
 
 <script>
-/* --- CONFIG --- */
+/* --- SETUP --- */
 const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); const db = firebase.firestore();
+let userId, roomId, roomKey, allMessages = [], currentZoom = 1;
 
-let userId, roomId, roomKey, isDecoded = false, allMessages = [], userData = {};
-
-/* --- AUTH & PROFILE --- */
-auth.onAuthStateChanged(u => { 
-    if(u){ 
-        userId = u.uid; 
-        document.getElementById("authBox").style.display="none"; 
-        document.getElementById("app").style.display="flex"; 
-        loadUserProfile();
-        initRoom(); 
-    } else { 
-        document.getElementById("authBox").style.display="block"; 
-        document.getElementById("app").style.display="none"; 
-    } 
-});
-
-async function loadUserProfile() {
-    const doc = await db.collection("users").doc(userId).get();
-    if(doc.exists) {
-        userData = doc.data();
-        document.getElementById("myName").innerText = userData.name;
-        document.getElementById("myAvatar").src = userData.pic || `https://ui-avatars.com/api/?name=${userData.name}`;
-    } else {
-        openProfile(); // Force profile setup for new users
-    }
-}
-
-function openProfile() { document.getElementById("profileModal").style.display = "block"; }
+/* --- PROFILE ENGINE --- */
+function openProfile() { document.getElementById("profileModal").style.display = "flex"; }
 function closeProfile() { document.getElementById("profileModal").style.display = "none"; }
+
+function updatePreview(url) { if(url) document.getElementById("cropPreview").src = url; }
+function adjustZoom(val) { 
+    currentZoom = val;
+    document.getElementById("cropPreview").style.transform = `scale(${val})`; 
+}
 
 async function saveProfile() {
     const name = document.getElementById("editName").value;
     const pic = document.getElementById("editPic").value;
-    if(!name) return alert("Enter a name!");
-    await db.collection("users").doc(userId).set({ name, pic });
-    closeProfile();
-    loadUserProfile();
+    // We save the zoom level in the database too!
+    await db.collection("users").doc(userId).set({ name, pic, zoom: currentZoom });
+    location.reload();
+}
+
+async function loadProfile() {
+    const doc = await db.collection("users").doc(userId).get();
+    if(doc.exists) {
+        const data = doc.data();
+        document.getElementById("myName").innerText = data.name;
+        const pfp = document.getElementById("myAvatar");
+        pfp.src = data.pic || `https://ui-avatars.com/api/?name=${data.name}`;
+        pfp.style.transform = `scale(${data.zoom || 1})`;
+    } else { openProfile(); }
 }
 
 /* --- CHAT ENGINE --- */
-function initRoom() { roomId = localStorage.getItem("roomId") || prompt("Room ID:"); localStorage.setItem("roomId", roomId); listenMessages(); }
+auth.onAuthStateChanged(u => { 
+    if(u){ userId = u.uid; document.getElementById("authBox").style.display="none"; document.getElementById("app").style.display="flex"; loadProfile(); initRoom(); }
+});
 
-function toggleSecretInput() { 
-    const box = document.getElementById("lockerRoom");
-    if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
-    else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
+function initRoom() { 
+    roomId = localStorage.getItem("roomId") || prompt("Enter Secret Room ID:"); 
+    roomKey = roomKey || prompt("Enter Encryption Key:"); // Simple prompt for key on start
+    localStorage.setItem("roomId", roomId); listenMessages(); 
 }
-
-function applyKey() { roomKey = document.getElementById("masterKey").value; if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } }
 
 async function renderAllMessages() {
     const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
     for(const m of allMessages) {
         let isMe = m.sender === userId;
-        let wrapper = document.createElement("div"); 
-        wrapper.className = `msg-wrapper ${isMe ? 'sent' : 'received'}`;
-        
-        // Fetch sender info from user collection
         const senderDoc = await db.collection("users").doc(m.sender).get();
-        const info = senderDoc.data() || { name: "Guest", pic: "" };
+        const s = senderDoc.data() || { name: "Guest", pic: "", zoom: 1 };
 
-        let content = isDecoded ? (CryptoJS.AES.decrypt(m.text, roomKey).toString(CryptoJS.enc.Utf8) || "???") : m.text.substring(0,12)+"...";
-        
-        wrapper.innerHTML = `
-            <img src="${info.pic || 'https://ui-avatars.com/api/?name='+info.name}" class="avatar-chat">
-            <div class="message">
-                <span class="sender-name">${isMe ? 'You' : info.name}</span>
-                <div>${content}</div>
+        let content = "???";
+        try { content = CryptoJS.AES.decrypt(m.text, roomKey).toString(CryptoJS.enc.Utf8) || "Locked"; } catch(e){}
+
+        const row = document.createElement("div");
+        row.className = `msg-row ${isMe ? 'sent' : 'received'}`;
+        row.innerHTML = `
+            <div style="width:30px; height:30px; border-radius:50%; overflow:hidden; border:1px solid var(--accent);">
+                <img src="${s.pic || 'https://ui-avatars.com/api/?name='+s.name}" style="width:100%; height:100%; object-fit:cover; transform: scale(${s.zoom || 1})">
             </div>
+            <div class="bubble">${content}</div>
         `;
-        chatBox.appendChild(wrapper);
+        chatBox.appendChild(row);
     }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function sendMessage() {
-    if(!isDecoded) return alert("Unlock first!");
     let input = document.getElementById("inputText");
     if(!input.value.trim()) return;
     db.collection("rooms").doc(roomId).collection("messages").add({ 
@@ -181,8 +209,8 @@ function listenMessages() {
     });
 }
 
-function login() { auth.signInWithEmailAndPassword(email.value, password.value).catch(e => alert(e.message)); }
-function logout(e) { e.stopPropagation(); auth.signOut().then(() => location.reload()); }
+function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
+function logout() { auth.signOut().then(() => location.reload()); }
 </script>
 </body>
 </html>

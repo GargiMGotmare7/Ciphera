@@ -8,23 +8,113 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
-        :root { --bg: #020617; --card: rgba(30, 41, 59, 0.7); --accent: #38bdf8; --secondary: #c084fc; --text: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        :root {
+            --bg: #020617;
+            --card: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --secondary: #c084fc;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ✨ AUTH BOX */
+        #authBox {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 320px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            letter-spacing: -2px;
+            margin: 10px 0 20px 0;
+            background: linear-gradient(to right, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
         .theme-picker { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
-        #authBox { background: var(--card); backdrop-filter: blur(12px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 320px; }
-        h2 { font-size: 2.5rem; letter-spacing: -2px; margin: 10px 0 20px 0; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
-        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 0.7rem; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 20px; cursor: pointer; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-main { background: var(--accent); color: #020617; }
-        #app { width: 95%; max-width: 450px; display: none; position: relative; }
-        .chat-container { height: 400px; overflow-y: auto; background: rgba(15, 23, 42, 0.8); border-radius: 20px; padding: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05); }
-        .message { padding: 12px 16px; border-radius: 18px; margin: 10px 0; max-width: 80%; font-size: 0.9rem; position: relative; }
+
+        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 0.7rem; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 20px; cursor: pointer; z-index: 10; }
+
+        input { width: 100%; padding: 12px; margin: 8px 0; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; color: white; box-sizing: border-box; }
+
+        /* 💬 CHAT STYLES */
+        #app { width: 95%; max-width: 450px; display: none; position: relative; height: 90vh; display: flex; flex-direction: column; }
+        .chat-container { flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.8); border-radius: 24px; padding: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05); }
+
+        .message { padding: 12px 16px; border-radius: 18px; margin: 10px 0; max-width: 80%; font-size: 0.9rem; position: relative; word-wrap: break-word; }
         .sent { background: linear-gradient(135deg, var(--accent), var(--secondary)); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
-        .received { background: #334155; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+
         .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: none; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg); }
         .message:hover .del-btn { display: flex; }
+
+        /* ⌨️ MODERN GEMINI-STYLE INPUT */
+        .input-area {
+            display: flex;
+            align-items: flex-end;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent !important;
+            border: none !important;
+            color: white;
+            padding: 10px;
+            height: 24px;
+            max-height: 120px;
+            resize: none;
+            outline: none;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .btn-circle {
+            background: var(--accent) !important;
+            color: var(--bg) !important;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 50% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+            margin: 0 0 2px 8px !important;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+        .btn-circle:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-circle svg { fill: currentColor; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -38,43 +128,75 @@
     <h2>Ciphera</h2>
     <input id="email" placeholder="Email" type="email">
     <input id="password" placeholder="Password" type="password">
-    <button class="btn-main" onclick="login()">Login</button>
+    <button onclick="login()" style="background:var(--accent); color:var(--bg); padding:12px; border-radius:12px; width:100%; border:none; font-weight:bold; cursor:pointer;">Login</button>
 </div>
 
 <div id="app">
     <div class="logout-btn" onclick="logout()">Logout</div>
-    <h2 onclick="toggleSecretInput()">Ciphera</h2>
+    <h2 onclick="toggleSecretInput()" style="text-align:center;">Ciphera</h2>
     
-    <div id="lockerRoom" style="display:none; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px;">
-        <input id="masterKey" type="password" placeholder="Key..." style="width: 50%;">
-        <button onclick="applyKey()" style="width: 80px; background: var(--secondary); color: white;">Unlock</button>
-        <button onclick="nukeChat()" style="background: #ef4444; margin-top: 10px; font-size: 0.7rem;">☢️ DELETE ALL MESSAGES</button>
+    <div id="lockerRoom" style="display:none; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; margin-bottom: 10px;">
+        <input id="masterKey" type="password" placeholder="Locker Key..." style="width: 70%; text-align: center;">
+        <button onclick="applyKey()" style="background: var(--secondary); color: white; width: auto; padding: 10px 20px; border-radius: 12px; border:none; cursor:pointer;">Unlock</button>
+        <button onclick="nukeChat()" style="background: #ef4444; margin-top: 10px; font-size: 0.7rem; border:none; padding:5px; border-radius:8px; color:white; cursor:pointer;">☢️ NUKE HISTORY</button>
     </div>
 
     <div class="chat-container" id="chatBox"></div>
 
-    <textarea id="inputText" placeholder="Message..."></textarea>
-    <button class="btn-main" onclick="sendMessage()">Send</button>
-    <div style="font-size: 0.6rem; margin-top: 10px; opacity: 0.2; cursor: pointer; text-align: center;" onclick="switchRoom()">v1.0.7 • ROOM: <span id="roomDisplay"></span></div>
+    <div class="input-area">
+        <textarea id="inputText" placeholder="Enter message..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+        <button class="btn-circle" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+                <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path>
+            </svg>
+        </button>
+    </div>
+    <div style="font-size: 0.6rem; opacity: 0.2; text-align: center; cursor: pointer; padding-bottom: 10px;" onclick="switchRoom()">v1.0.8 • ROOM: <span id="roomDisplay"></span></div>
 </div>
 
 <script>
-/* --- CONFIG & THEMES --- */
+/* --- CONFIG --- */
 const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); const db = firebase.firestore();
 let userId, roomId, roomKey, isDecoded = false, allMessages = [];
 
+/* --- THEMES --- */
 function setTheme(t) {
     const root = document.documentElement;
-    const th = { blue: { a: '#38bdf8', s: '#c084fc', b: '#020617' }, pink: { a: '#f472b6', s: '#fb7185', b: '#0f0505' }, green: { a: '#4ade80', s: '#2dd4bf', b: '#050f05' } };
-    root.style.setProperty('--accent', th[t].a); root.style.setProperty('--secondary', th[t].s); root.style.setProperty('--bg', th[t].b);
+    const th = { 
+        blue: { a: '#38bdf8', s: '#c084fc', b: '#020617' }, 
+        pink: { a: '#f472b6', s: '#fb7185', b: '#0f0505' }, 
+        green: { a: '#4ade80', s: '#2dd4bf', b: '#050f05' } 
+    };
+    root.style.setProperty('--accent', th[t].a);
+    root.style.setProperty('--secondary', th[t].s);
+    root.style.setProperty('--bg', th[t].b);
 }
 
-/* --- CORE LOGIC --- */
-auth.onAuthStateChanged(u => { if(u){ userId = u.uid; document.getElementById("authBox").style.display="none"; document.getElementById("app").style.display="block"; initRoom(); } else { document.getElementById("authBox").style.display="block"; document.getElementById("app").style.display="none"; } });
+/* --- AUTH --- */
+auth.onAuthStateChanged(u => { 
+    if(u){ 
+        userId = u.uid; 
+        document.getElementById("authBox").style.display="none"; 
+        document.getElementById("app").style.display="flex"; 
+        initRoom(); 
+    } else { 
+        document.getElementById("authBox").style.display="block"; 
+        document.getElementById("app").style.display="none"; 
+    } 
+});
 
-function initRoom() { roomId = localStorage.getItem("roomId") || prompt("Room ID:"); localStorage.setItem("roomId", roomId); document.getElementById("roomDisplay").innerText = roomId; listenMessages(); }
+function login() { auth.signInWithEmailAndPassword(email.value, password.value).catch(e => alert(e.message)); }
+function logout() { if(confirm("Sign out?")) auth.signOut().then(() => location.reload()); }
+
+/* --- ENGINE --- */
+function initRoom() { 
+    roomId = localStorage.getItem("roomId") || prompt("Room ID:"); 
+    localStorage.setItem("roomId", roomId); 
+    document.getElementById("roomDisplay").innerText = roomId; 
+    listenMessages(); 
+}
 
 function toggleSecretInput() { 
     const box = document.getElementById("lockerRoom");
@@ -82,18 +204,27 @@ function toggleSecretInput() {
     else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
 }
 
-function applyKey() { roomKey = document.getElementById("masterKey").value; if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } }
+function applyKey() { 
+    roomKey = document.getElementById("masterKey").value; 
+    if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } 
+}
 
 function renderAllMessages() {
     const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
     allMessages.forEach(m => {
         let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
-        let content = isDecoded ? (CryptoJS.AES.decrypt(m.text, roomKey).toString(CryptoJS.enc.Utf8) || "???") : m.text.substring(0,10)+"...";
+        let content;
+        if(isDecoded) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(m.text, roomKey);
+                content = bytes.toString(CryptoJS.enc.Utf8) || "???";
+            } catch (e) { content = "???"; }
+        } else {
+            content = `<span style="opacity:0.3; font-family:monospace;">${m.text.substring(0,12)}...</span>`;
+        }
         
-        // Add Delete Button to sent messages
-        let delHtml = (m.sender === userId) ? `<div class="del-btn" onclick="deleteMsg('${m.id}')">×</div>` : "";
-        
-        d.innerHTML = `${delHtml}<div>${content}</div>`;
+        let delBtn = (m.sender === userId) ? `<div class="del-btn" onclick="deleteMsg('${m.id}')">×</div>` : "";
+        d.innerHTML = `${delBtn}<div>${content}</div>`;
         chatBox.appendChild(d);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -101,9 +232,15 @@ function renderAllMessages() {
 
 function sendMessage() {
     if(!isDecoded) return alert("Unlock first!");
-    let t = document.getElementById("inputText").value; if(!t.trim()) return;
-    db.collection("rooms").doc(roomId).collection("messages").add({ text: CryptoJS.AES.encrypt(t, roomKey).toString(), sender: userId, time: Date.now() });
-    document.getElementById("inputText").value = "";
+    let input = document.getElementById("inputText");
+    if(!input.value.trim()) return;
+    db.collection("rooms").doc(roomId).collection("messages").add({ 
+        text: CryptoJS.AES.encrypt(input.value, roomKey).toString(), 
+        sender: userId, 
+        time: Date.now() 
+    });
+    input.value = "";
+    input.style.height = "24px"; // Reset height
 }
 
 function listenMessages() {
@@ -112,25 +249,10 @@ function listenMessages() {
     });
 }
 
-/* --- DELETE ACTIONS --- */
-function deleteMsg(msgId) {
-    if(confirm("Delete this message forever?")) {
-        db.collection("rooms").doc(roomId).collection("messages").doc(msgId).delete();
-    }
-}
-
-function nukeChat() {
-    if(confirm("☢️ NUKE OPTION: Delete EVERY message in this room? This cannot be undone.")) {
-        db.collection("rooms").doc(roomId).collection("messages").get().then(sn => {
-            sn.forEach(doc => doc.ref.delete());
-        });
-    }
-}
-
-function logout() { auth.signOut().then(() => { localStorage.removeItem("roomId"); location.reload(); }); }
-function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
-function signup() { auth.createUserWithEmailAndPassword(email.value, password.value); }
+function deleteMsg(id) { if(confirm("Delete?")) db.collection("rooms").doc(roomId).collection("messages").doc(id).delete(); }
+function nukeChat() { if(confirm("☢️ NUKE EVERYTHING?")) db.collection("rooms").doc(roomId).collection("messages").get().then(sn => sn.forEach(doc => doc.ref.delete())); }
 function switchRoom() { localStorage.removeItem("roomId"); location.reload(); }
 </script>
+
 </body>
 </html>

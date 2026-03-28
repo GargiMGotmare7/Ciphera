@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <title>Ciphera</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- 🔐 CryptoJS for real encryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
     <style>
         body {
             font-family: Arial;
@@ -12,9 +16,7 @@
             color: white;
         }
 
-        h2 {
-            text-align: center;
-        }
+        h2 { text-align: center; }
 
         .chat-container {
             width: 90%;
@@ -28,7 +30,6 @@
             border-radius: 15px;
             margin: 10px;
             max-width: 70%;
-            position: relative;
         }
 
         .sent {
@@ -40,7 +41,6 @@
 
         .received {
             background: #1e293b;
-            text-align: left;
         }
 
         textarea {
@@ -48,7 +48,6 @@
             height: 60px;
             border-radius: 10px;
             padding: 10px;
-            margin: 10px;
         }
 
         button {
@@ -57,7 +56,6 @@
             border: none;
             cursor: pointer;
             background: #38bdf8;
-            margin: 5px;
         }
 
         input {
@@ -67,180 +65,134 @@
         }
     </style>
 </head>
+
 <body>
-<div id="appContent">
-<h2>Your chats</h2>
+
+<h2>Ciphera</h2>
 
 <div style="text-align:center;">
     <textarea id="inputText" placeholder="Type message..."></textarea><br>
     <button onclick="sendMessage()">Send</button>
-    <button onclick="receiveMessage()">Fake Receive</button>
 </div>
 
 <div class="chat-container" id="chatBox"></div>
 
 <script>
-      let roomId = localStorage.getItem("roomId");
-let roomKey = localStorage.getItem("roomKey_" + roomId);
-
-if (!roomKey) {
-    roomKey = prompt("Enter Secret Key for this room:");
-    localStorage.setItem("roomKey_" + roomId, roomKey);
-}
-if (!roomId) {
-    roomId = prompt("Enter Room ID (anything like secret123):");
-    localStorage.setItem("roomId", roomId);
-}
-   // 🔥 Firebase setup FIRST
+/* ---------------- FIREBASE ---------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
+  apiKey: "YOUR_KEY",
   authDomain: "ciphera-1.firebaseapp.com",
   projectId: "ciphera-1",
-  storageBucket: "ciphera-1.firebasestorage.app",
-  messagingSenderId: "562339080162",
-  appId: "1:562339080162:web:027e5fa3066dea8131bbbb",
-  measurementId: "G-ZG2K9P4H8L"
 };
 
-
-// THEN initialize
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let userId = localStorage.getItem("userId");
+/* ---------------- USER + ROOM ---------------- */
+let roomId = localStorage.getItem("roomId");
+if (!roomId) {
+    roomId = prompt("Enter Room ID:");
+    localStorage.setItem("roomId", roomId);
+}
 
+let roomKey = localStorage.getItem("roomKey_" + roomId);
+if (!roomKey) {
+    roomKey = prompt("Enter Secret Room Key:");
+    localStorage.setItem("roomKey_" + roomId, roomKey);
+}
+
+let userId = localStorage.getItem("userId");
 if (!userId) {
     userId = "user_" + Math.random().toString(36).substr(2, 9);
     localStorage.setItem("userId", userId);
 }
 
+/* ---------------- ENCRYPT / DECRYPT ---------------- */
+function encrypt(text) {
+    return CryptoJS.AES.encrypt(text, roomKey).toString();
+}
 
-function encode(text) {
-    let base = btoa(text); // base64
+function decrypt(cipher) {
+    try {
+        let bytes = CryptoJS.AES.decrypt(cipher, roomKey);
+        return bytes.toString(CryptoJS.enc.Utf8) || "Wrong Key";
+    } catch {
+        return "Error";
+    }
+}
 
-    let chars = "!@#$%^&*()_+";
-    let noisy = "";
+/* ---------------- UI MESSAGE ---------------- */
+function createMessage(text, type, encrypted = false) {
+    let div = document.createElement("div");
+    div.className = "message " + type;
 
-    for (let i = 0; i < base.length; i++) {
-        noisy += base[i];
-
-        // randomly add noise
-        if (Math.random() < 0.3) {
-            noisy += chars[Math.floor(Math.random() * chars.length)];
-        }
+    if (encrypted) {
+        div.innerHTML = `
+            <div class="cipher">${text}</div>
+            <input type="password" placeholder="Room Key">
+            <button onclick="unlock(this)">Unlock</button>
+            <div class="decoded"></div>
+        `;
+    } else {
+        div.innerHTML = `<div>${text}</div>`;
     }
 
-    return noisy;
+    document.getElementById("chatBox").appendChild(div);
 }
 
-function decode(text) {
-    // remove noise
-    let cleaned = text.replace(/[^a-zA-Z0-9=]/g, "");
-
-    return atob(cleaned); // decode base64
-}
-
-function createMessage(encodedText, type) {
-
-    let msgDiv = document.createElement("div");
-    msgDiv.className = "message " + type;
-
-    msgDiv.innerHTML = `
-       <p class="encoded">${encodedText}</p>
-        <input type="password" placeholder="Code">
-        <button onclick="unlockMessage(this)">Unlock</button>
-        <p class="decoded"></p>
-    `;
-
-    document.getElementById("chatBox").appendChild(msgDiv);
-}
-
+/* ---------------- SEND ---------------- */
 function sendMessage() {
     let text = document.getElementById("inputText").value;
+    if (!text.trim()) return;
 
-    if (text.trim() === "") return;
-
-    let encoded = encode(text);
+    let encrypted = encrypt(text);
 
     db.collection("rooms")
-.doc(roomId)
-.collection("messages")
-.add({
-    text: encoded,
-    sender: userId,
-    time: Date.now()
-});
+      .doc(roomId)
+      .collection("messages")
+      .add({
+          text: encrypted,
+          sender: userId,
+          time: Date.now()
+      });
 
     document.getElementById("inputText").value = "";
 }
 
-function receiveMessage() {
-    let fakeReplies = [
-        "ok got it",
-        "see you soon",
-        "Please send the Homework  ",
-        "That chapter's done",
-        "ttyl"
-    ];
+/* ---------------- UNLOCK ---------------- */
+function unlock(btn) {
+    let parent = btn.parentElement;
+    let key = parent.querySelector("input").value;
 
-    let random = fakeReplies[Math.floor(Math.random() * fakeReplies.length)];
-    createMessage(random, "received");
+    let cipher = parent.querySelector(".cipher").innerText;
+
+    let bytes = CryptoJS.AES.decrypt(cipher, key);
+    let decoded = bytes.toString(CryptoJS.enc.Utf8);
+
+    parent.querySelector(".decoded").innerText =
+        decoded || "Incorrect Key";
 }
 
-function unlockMessage(button) {
-    let parent = button.parentElement;
-    let pass = parent.querySelector("input").value;
-
-    if (pass !== roomKey) {
-        parent.querySelector(".decoded").innerText = "Incorrect password";
-        return;
-    }
-
-    let encoded = parent.querySelector(".encoded").innerText;
-    let decoded = decode(encoded);
-
-    let decodedEl = parent.querySelector(".decoded");
-    decodedEl.innerText = decoded;
-
-    setTimeout(() => {
-        decodedEl.innerText = "";
-    }, 4000);
-}
-
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        lockMessages();
-    }
-});
-
-window.addEventListener("blur", () => {
-    lockMessages();
-});
-
-function lockMessages() {
-    let allDecoded = document.querySelectorAll(".decoded");
-    allDecoded.forEach(el => {
-        el.innerText = ""; // just clears it silently
-    });
-}
+/* ---------------- REALTIME LISTENER ---------------- */
 db.collection("rooms")
-.doc(roomId)
-.collection("messages")
-.orderBy("time")
-.onSnapshot(snapshot => {
-    document.getElementById("chatBox").innerHTML = "";
+  .doc(roomId)
+  .collection("messages")
+  .orderBy("time")
+  .onSnapshot(snapshot => {
+      document.getElementById("chatBox").innerHTML = "";
 
-    snapshot.forEach(doc => {
-        let data = doc.data();
+      snapshot.forEach(doc => {
+          let data = doc.data();
 
-        createMessage(
-            data.text,
-            data.sender === userId ? "sent" : "received"
-        );
-    });
-});
-    
+          createMessage(
+              data.text,
+              data.sender === userId ? "sent" : "received",
+              true
+          );
+      });
+  });
+
 </script>
-</div>
+
 </body>
 </html>

@@ -214,6 +214,39 @@ localStorage.setItem("roomKey_"+roomId,roomKey);
 
 }
 
+/**
+ * Captures the user input, encrypts it using the AES roomKey,
+ * and saves the ciphertext to the Firestore database.
+ */
+function sendMessage() {
+    const input = document.getElementById("inputText");
+    const text = input.value.trim();
+
+    // 1. Validation: Don't send empty messages or if we aren't in a room
+    if (!text || !roomId || !roomKey) return;
+
+    // 2. Encrypt the message using your CryptoJS logic
+    const secretMessage = encrypt(text);
+
+    // 3. Add the message to the specific room's sub-collection
+    db.collection("rooms")
+        .doc(roomId)
+        .collection("messages")
+        .add({
+            text: secretMessage,     // The encrypted "secret language"
+            sender: userId,          // Your Firebase UID
+            time: Date.now()         // Timestamp for ordering
+        })
+        .then(() => {
+            // 4. Clear the input field for the next message
+            input.value = "";
+        })
+        .catch(err => {
+            console.error("Error sending message: ", err);
+            alert("Failed to send message.");
+        });
+}
+
 listenMessages();
 
 }

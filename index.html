@@ -19,6 +19,7 @@
             --secondary: #c084fc;
             --text: #f1f5f9;
             --glass-border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
         }
 
         * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
@@ -73,12 +74,25 @@
         .sidebar-header { padding: 30px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
 
         .group-list { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        /* Updated Group Item for Delete Button */
         .group-item {
+            position: relative;
             padding: 12px; margin-bottom: 10px; border-radius: 18px; cursor: pointer;
             display: flex; align-items: center; gap: 12px; border: 1px solid transparent;
         }
         .group-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
+
+        .delete-grp-btn {
+            position: absolute; top: 10px; right: 10px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2); color: var(--danger);
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; opacity: 0; transition: opacity 0.2s;
+        }
+        .group-item:hover .delete-grp-btn { opacity: 1; }
+        .delete-grp-btn:hover { background: var(--danger); color: white; }
 
         /* --- CHAT AREA --- */
         .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
@@ -266,12 +280,32 @@
                 const data = doc.data();
                 const div = document.createElement("div");
                 div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
-                                 <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
+                div.innerHTML = `
+                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
+                    <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>
+                    <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
+                
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
         });
+    }
+
+    async function deleteGroup(event, gId) {
+        event.stopPropagation(); // Prevents the group from being selected while trying to delete it
+        if (confirm("Delete this squad? All messages will be lost.")) {
+            try {
+                await db.collection("groups").doc(gId).delete();
+                if (roomId === gId) {
+                    roomId = null;
+                    document.getElementById("activeGroupName").innerText = "Select Chat";
+                    document.getElementById("roomDisplay").innerText = "";
+                    document.getElementById("chatBox").innerHTML = "";
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
     }
 
     function switchGroup(id, name) {
@@ -353,7 +387,8 @@
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
         }, (error) => {
             if(error.code === 'permission-denied') {
-                alert("Permission Denied: Update your Firestore Rules in the Firebase Console!");
+                // If the group was deleted, this will trigger. We just stop listening.
+                console.log("Stopped listening to messages.");
             }
         });
     }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ciphera | Stealth</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="authBox">
+        <h2>Ciphera</h2>
+        <input id="email" placeholder="Email" type="email">
+        <input id="password" placeholder="Password" type="password">
+        <button id="loginBtn">Login</button>
+    </div>
+
+    <div id="app" style="display: none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Chats</h3>
+                <button id="openGroupModalBtn" class="btn-circle">+</button>
+            </div>
+            <div class="group-list" id="groupList"></div>
+            <div class="uid-tag">UID: <span id="myUidDisplay">...</span></div>
+        </div>
+
+        <div class="main-chat">
+            <div class="chat-header">
+                <div>
+                    <b id="activeGroupName">Select a chat</b><br>
+                    <small id="roomDisplay"></small>
+                </div>
+                <div class="header-btns">
+                    <button id="unlockBtn">🔓 Unlock</button>
+                    <button id="logoutBtn">Logout</button>
+                </div>
+            </div>
+
+            <div id="lockerRoom" style="display:none;">
+                <input id="masterKey" type="password" placeholder="Stealth Key...">
+                <button id="applyKeyBtn">Apply</button>
+                <button id="openFriendModalBtn">Add Member</button>
+            </div>
+
+            <div class="chat-container" id="chatBox"></div>
+
+            <div class="input-area">
+                <textarea id="inputText" placeholder="Message..."></textarea>
+                <button id="sendBtn" class="btn-circle">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h3>New Group</h3>
+            <input id="newGroupName" placeholder="Group Name">
+            <button id="confirmGroupBtn">Create</button>
+            <button class="close-modal" data-modal="groupModal">Cancel</button>
+        </div>
+    </div>
+
+    <div id="friendModal" class="modal">
+        <div class="modal-content">
+            <h3>Add Member</h3>
+            <input id="friendUid" placeholder="Paste Friend UID">
+            <button id="confirmFriendBtn">Add</button>
+            <button class="close-modal" data-modal="friendModal">Cancel</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

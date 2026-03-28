@@ -34,30 +34,21 @@
 </head>
 <body>
 
-<div id="authBox" style="text-align:center; margin-top:50px;">
-    <h2>Ciphera Login</h2>
-    <button class="btn-google" onclick="googleLogin()">🔵 Continue with Google</button>
-    <p>OR</p>
-    <input id="email" placeholder="Email" type="email"><br>
-    <input id="password" placeholder="Password" type="password"><br>
-    <button onclick="signup()" style="background:#475569; color:white;">Sign Up</button>
-    <button onclick="login()" style="background:#38bdf8; color:black;">Login</button>
-</div>
-
 <div id="app" style="display:none;">
-    <h2>Ciphera</h2>
+    <h2 onclick="toggleSecretInput()" style="cursor: default; user-select: none;">Ciphera</h2>
 
-    <div class="controls" id="lockerRoom">
-        <input id="masterKey" type="password" placeholder="Enter Secret Code to Reveal...">
-        <button id="toggleBtn" class="btn-unlock" onclick="toggleGlobalLock()">🔓 Unlock All</button>
-        <button onclick="switchRoom()" style="background:transparent; color:#94a3b8; font-size: 0.8em;">🔄 Switch Room</button>
+    <div id="lockerRoom" style="display:none; text-align:center; margin-bottom: 10px;">
+        <input id="masterKey" type="password" placeholder="..." style="width: 50%; height: 20px; font-size: 12px;">
+        <button onclick="toggleGlobalLock()" style="padding: 5px 10px; font-size: 10px;">Apply</button>
     </div>
 
     <div class="chat-container" id="chatBox"></div>
 
     <div style="text-align:center; max-width: 450px; margin: auto;">
-        <textarea id="inputText" placeholder="Type a message (Unlock first)..."></textarea><br>
-        <button class="btn-send" onclick="sendMessage()">Send Message</button>
+        <textarea id="inputText" placeholder="Type..."></textarea><br>
+        <button class="btn-send" onclick="sendMessage()">Send</button>
+        <br>
+        <small onclick="switchRoom()" style="color: #334155; cursor: pointer;">v1.0.4</small>
     </div>
 </div>
 
@@ -76,23 +67,16 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* ---------------- STATE ---------------- */
 let userId = null;
 let roomId = null;
-let roomKey = null;      // The actual secret key
-let isDecoded = false;   // Toggle for the UI
-let allMessages = [];    // Local copy of chat data
+let roomKey = null;      
+let isDecoded = false;   
+let allMessages = [];    
 
 /* ---------------- AUTH ---------------- */
-function googleLogin() {
-    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => alert(err.message));
-}
-function signup() {
-    auth.createUserWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
-}
-function login() {
-    auth.signInWithEmailAndPassword(email.value, password.value).catch(err => alert(err.message));
-}
+function googleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+function signup() { auth.createUserWithEmailAndPassword(email.value, password.value); }
+function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
 
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -108,89 +92,82 @@ auth.onAuthStateChanged(user => {
 
 /* ---------------- ROOMS ---------------- */
 function initRoom() {
-    roomId = localStorage.getItem("roomId") || prompt("Enter Room ID (e.g. 'private123'):");
+    roomId = localStorage.getItem("roomId") || prompt("Room ID:");
     if (!roomId) return;
     localStorage.setItem("roomId", roomId);
     listenMessages();
 }
 
-function switchRoom() {
-    localStorage.removeItem("roomId");
-    location.reload();
+/* ---------------- SECRET TOGGLES ---------------- */
+
+// 1. Shows/Hides the password box when you click the "Ciphera" title
+function toggleSecretInput() {
+    const box = document.getElementById("lockerRoom");
+    box.style.display = (box.style.display === "none") ? "block" : "none";
 }
 
-/* ---------------- THE LOCKER LOGIC ---------------- */
+// 2. The actual logic to lock/unlock
 function toggleGlobalLock() {
     const keyInput = document.getElementById("masterKey");
-    const btn = document.getElementById("toggleBtn");
-
+    
     if (!isDecoded) {
-        if (!keyInput.value) return alert("You need a key to reveal chats!");
+        if (!keyInput.value) return;
         roomKey = keyInput.value;
         isDecoded = true;
-        btn.innerText = "🔒 Lock Chats";
-        btn.className = "btn-lock";
+        // Hide the input again once unlocked to keep it clean
+        document.getElementById("lockerRoom").style.display = "none";
     } else {
         isDecoded = false;
         roomKey = null;
         keyInput.value = "";
-        btn.innerText = "🔓 Unlock All";
-        btn.className = "btn-unlock";
     }
     renderAllMessages();
 }
 
-/* ---------------- UI RENDERING ---------------- */
+/* ---------------- UI & FIREBASE ---------------- */
 function renderAllMessages() {
     const chatBox = document.getElementById("chatBox");
     chatBox.innerHTML = "";
-
     allMessages.forEach(msg => {
         let div = document.createElement("div");
         div.className = "message " + (msg.sender === userId ? "sent" : "received");
-
         if (isDecoded) {
             try {
                 const bytes = CryptoJS.AES.decrypt(msg.text, roomKey);
-                const decodedText = bytes.toString(CryptoJS.enc.Utf8);
-                div.innerText = decodedText || "⚠️ [Wrong Key]";
-            } catch (e) {
-                div.innerText = "⚠️ [Decryption Error]";
-            }
+                div.innerText = bytes.toString(CryptoJS.enc.Utf8) || "???";
+            } catch (e) { div.innerText = "???"; }
         } else {
-            // SHOW SCRAMBLED CODE
-            div.innerHTML = `<span class="cipher-text">${msg.text.substring(0, 30)}...</span>`;
+            div.innerHTML = `<span class="cipher-text">${msg.text.substring(0, 15)}...</span>`;
         }
-
         chatBox.appendChild(div);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-/* ---------------- FIREBASE ACTIONS ---------------- */
 function sendMessage() {
-    if (!isDecoded) return alert("Unlock the chat with your key before sending!");
-    
+    if (!isDecoded) return; // Can't send while locked
     let text = document.getElementById("inputText").value;
     if (!text.trim()) return;
-
     db.collection("rooms").doc(roomId).collection("messages").add({
         text: CryptoJS.AES.encrypt(text, roomKey).toString(),
         sender: userId,
         time: Date.now()
     });
-
     document.getElementById("inputText").value = "";
 }
 
 function listenMessages() {
-    db.collection("rooms").doc(roomId).collection("messages")
-      .orderBy("time", "asc")
+    db.collection("rooms").doc(roomId).collection("messages").orderBy("time", "asc")
       .onSnapshot(snapshot => {
           allMessages = [];
           snapshot.forEach(doc => allMessages.push(doc.data()));
           renderAllMessages();
       });
+}
+
+function switchRoom() {
+    localStorage.removeItem("roomId");
+    location.reload();
 }
 </script>
 

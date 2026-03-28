@@ -13,17 +13,56 @@ body {
     color: var(--text);
     margin: 0;
     display: flex;
-    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
     overflow: hidden;
 }
 
-/* Add all your previous sidebar, message, and modal styles here... */
-/* Ensure you use flexbox for the #app container */
-#app { width: 100%; height: 100%; display: flex; }
-.sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid #334155; }
-.main-chat { flex: 1; display: flex; flex-direction: column; }
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
-#authBox {
-    transition: opacity 0.5s ease;
-    /* ... keep your other existing authBox styles ... */
+/* --- HERO & HOMEPAGE --- */
+#hero {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; background: var(--bg); z-index: 100;
 }
+.hero-content { text-align: center; z-index: 2; }
+h1 { font-size: 5rem; letter-spacing: -3px; margin: 0; background: linear-gradient(to bottom, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h1 span { -webkit-text-fill-color: var(--secondary); }
+.glow-sphere { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%); filter: blur(60px); }
+.badge { padding: 5px 12px; border: 1px solid var(--accent); color: var(--accent); border-radius: 20px; font-size: 10px; letter-spacing: 2px; margin-bottom: 10px; display: inline-block; }
+
+/* --- AUTH BOX --- */
+#authBox { background: var(--card); backdrop-filter: blur(20px); padding: 40px; border-radius: 28px; border: 1px solid rgba(255,255,255,0.1); width: 320px; text-align: center; position: relative; z-index: 101; }
+.btn-google { width: 100%; background: white; color: black; padding: 12px; border-radius: 12px; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-weight: 600; margin-bottom: 15px; }
+.divider { opacity: 0.2; font-size: 10px; margin: 15px 0; }
+.sub-link { font-size: 11px; opacity: 0.5; margin-top: 15px; cursor: pointer; }
+
+/* --- APP LAYOUT --- */
+#app { width: 100vw; height: 100vh; display: none; }
+.sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+.main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+.sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.group-list { flex: 1; overflow-y: auto; padding: 10px; }
+.group-item { padding: 15px; border-radius: 12px; cursor: pointer; margin-bottom: 5px; transition: 0.2s; border: 1px solid transparent; }
+.group-item:hover { background: rgba(255,255,255,0.03); }
+.active-group { background: rgba(56, 189, 248, 0.1); border-color: var(--accent); }
+.uid-tag { padding: 15px; font-size: 10px; opacity: 0.3; border-top: 1px solid rgba(255,255,255,0.05); }
+
+/* --- MESSAGES --- */
+.chat-container { flex: 1; overflow-y: auto; padding: 20px; }
+.message { padding: 10px 15px; border-radius: 15px; margin: 5px 0; max-width: 70%; font-size: 14px; position: relative; }
+.sent { background: linear-gradient(135deg, var(--accent), var(--secondary)); margin-left: auto; color: white; border-bottom-right-radius: 2px; }
+.received { background: #1e293b; margin-right: auto; border-bottom-left-radius: 2px; }
+
+/* --- INPUT --- */
+.input-area { padding: 20px; display: flex; gap: 10px; background: rgba(15, 23, 42, 0.5); }
+textarea { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 15px; color: white; padding: 10px 15px; resize: none; outline: none; }
+.btn-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; color: var(--bg); font-weight: bold; }
+
+/* --- MODALS --- */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: var(--sidebar); padding: 30px; border-radius: 20px; width: 300px; border: 1px solid var(--accent); }
+.close-modal { background: none; border: none; color: white; opacity: 0.5; margin-top: 10px; cursor: pointer; width: 100%; }
+
+/* --- THEME PICKER --- */
+.theme-picker { display: flex; gap: 10px; margin-bottom: 20px; }
+.dot { width: 15px; height: 15px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); }

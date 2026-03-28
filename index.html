@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ciphera | Stealth</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -10,16 +13,19 @@
     <style>
         :root {
             --bg: #020617;
-            --sidebar: #0f172a;
-            --card: rgba(30, 41, 59, 0.7);
-            --accent: #38bdf8;
-            --secondary: #c084fc;
-            --text: #f8fafc;
+            --sidebar: rgba(15, 23, 42, 0.6);
+            --card: rgba(30, 41, 59, 0.4);
+            --accent: #38bdf8; /* Electric Blue */
+            --secondary: #c084fc; /* Soft Purple */
+            --text: #f1f5f9;
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
+        * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #020617);
             color: var(--text);
             margin: 0;
             display: flex;
@@ -27,105 +33,100 @@
             overflow: hidden;
         }
 
-        /* --- AUTH BOX --- */
+        /* --- AUTHENTICATION BOX --- */
         #authBox {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--card); backdrop-filter: blur(12px);
-            padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center; width: 320px; z-index: 100;
+            background: var(--card); backdrop-filter: blur(25px);
+            padding: 40px; border-radius: 30px; border: 1px solid var(--glass-border);
+            text-align: center; width: 350px; z-index: 100;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        /* --- PASSWORD EYE STYLES --- */
-        .password-wrapper {
-            position: relative;
-            width: 100%;
+        #authBox h2 { 
+            font-size: 2.5rem; font-weight: 800; margin-bottom: 25px; 
+            background: linear-gradient(to right, var(--accent), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
         }
-        
+
+        /* --- INPUTS --- */
+        input, textarea {
+            width: 100%; padding: 14px; margin: 10px 0; 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            border-radius: 15px; color: white; outline: none;
+        }
+        input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+
+        .password-wrapper { position: relative; width: 100%; }
         .eye-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--accent);
-            opacity: 0.6;
-            display: flex;
-            align-items: center;
-            padding: 0;
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; color: var(--accent); opacity: 0.6;
         }
-        .eye-btn:hover { opacity: 1; }
 
-        .forgot-link {
-            display: block;
-            margin-top: 15px;
-            font-size: 0.8rem;
-            color: var(--accent);
-            text-decoration: none;
-            opacity: 0.8;
-            transition: 0.3s;
-        }
-        .forgot-link:hover { opacity: 1; text-decoration: underline; }
-
-        /* --- MAIN LAYOUT --- */
+        /* --- LAYOUT --- */
         #app { display: none; width: 100%; height: 100%; flex-direction: row; }
 
         .sidebar {
-            width: 350px;
-            background: var(--sidebar);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
+            width: 320px; background: var(--sidebar); backdrop-filter: blur(15px);
+            border-right: 1px solid var(--glass-border); display: flex; flex-direction: column;
         }
 
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .sidebar-header { padding: 30px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
 
-        .group-list { flex: 1; overflow-y: auto; padding: 10px; }
-        
+        .group-list { flex: 1; overflow-y: auto; padding: 15px; }
         .group-item {
-            padding: 15px;
-            margin-bottom: 8px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 1px solid transparent;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            padding: 12px; margin-bottom: 10px; border-radius: 18px; cursor: pointer;
+            display: flex; align-items: center; gap: 12px; border: 1px solid transparent;
         }
-        .group-item:hover { background: rgba(255,255,255,0.05); }
+        .group-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
 
-        .main-chat { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); }
-        
-        .chat-header { padding: 15px 25px; background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        /* --- CHAT AREA --- */
+        .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header { 
+            padding: 20px 30px; background: rgba(15, 23, 42, 0.3); 
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
 
-        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+        .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
-        .message { padding: 12px 16px; border-radius: 18px; margin: 8px 0; max-width: 70%; font-size: 0.9rem; position: relative; }
-        .sent { background: linear-gradient(135deg, var(--accent), var(--secondary)); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
-        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+        .message { 
+            padding: 12px 18px; border-radius: 20px; margin: 6px 0; 
+            max-width: 70%; font-size: 0.95rem; line-height: 1.4;
+        }
+        .sent { 
+            background: linear-gradient(135deg, var(--accent), #6366f1); 
+            margin-left: auto; color: white; border-bottom-right-radius: 4px; 
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
+        }
+        .received { 
+            background: #1e293b; margin-right: auto; color: #e2e8f0; 
+            border-bottom-left-radius: 4px; 
+        }
 
-        .input-area { padding: 20px; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; gap: 10px; }
-        textarea { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 20px; color: white; padding: 12px 20px; resize: none; outline: none; height: 20px; }
+        /* --- CONTROLS --- */
+        .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
+        textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
+
+        .btn-circle { 
+            background: linear-gradient(135deg, var(--accent), var(--secondary)); 
+            border: none; width: 50px; height: 50px; border-radius: 50%; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .btn-circle:hover { transform: scale(1.1) rotate(5deg); }
 
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center;
         }
-        .modal-content { background: var(--sidebar); padding: 30px; border-radius: 20px; width: 300px; border: 1px solid var(--accent); }
+        .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
 
-        .btn-circle { background: var(--accent); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: white; box-sizing: border-box; }
-        
-        .auth-buttons { display: flex; gap: 10px; margin-top: 5px; }
+        .unlock-pill {
+            background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary);
+            color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -133,32 +134,27 @@
 <div id="authBox">
     <h2>Ciphera</h2>
     <input id="email" placeholder="Email" type="email">
-    
     <div class="password-wrapper">
         <input id="password" placeholder="Password" type="password">
         <button class="eye-btn" onclick="togglePasswordVisibility()">
-            <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-            </svg>
+            <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
     </div>
-    
-    <div class="auth-buttons">
-        <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer;">Login</button>
-        <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer;">Sign Up</button>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 14px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer;">Login</button>
+        <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer;">Join</button>
     </div>
-    
-    <a href="javascript:void(0)" class="forgot-link" onclick="forgotPassword()">Forgot Password?</a>
+    <a href="javascript:void(0)" style="display:block; margin-top:20px; color:var(--accent); font-size:12px; text-decoration:none;" onclick="forgotPassword()">Forgot Password?</a>
 </div>
 
 <div id="app">
     <div class="sidebar">
         <div class="sidebar-header">
-            <h3 style="margin:0; color:var(--accent)">Chats</h3>
-            <button onclick="openModal('groupModal')" class="btn-circle" style="width:30px; height:30px; font-size:20px">+</button>
+            <h3 style="margin:0; color:var(--accent); letter-spacing: -1px;">Messages</h3>
+            <button onclick="openModal('groupModal')" class="btn-circle" style="width:35px; height:35px;">+</button>
         </div>
         <div class="group-list" id="groupList"></div>
-        <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; opacity: 0.5;">
+        <div style="padding: 20px; border-top: 1px solid var(--glass-border); font-size: 10px; opacity: 0.4;">
             UID: <span id="myUidDisplay">...</span>
         </div>
     </div>
@@ -166,27 +162,27 @@
     <div class="main-chat">
         <div class="chat-header">
             <div>
-                <b id="activeGroupName">Select a chat</b><br>
-                <small id="roomDisplay" style="opacity:0.5; font-size:10px"></small>
+                <b id="activeGroupName" style="font-size: 1.2rem;">Select Chat</b><br>
+                <small id="roomDisplay" style="opacity:0.4; font-size:9px"></small>
             </div>
             <div style="display:flex; gap:10px">
-                <button onclick="toggleSecretInput()" style="background:none; border:1px solid var(--secondary); color:var(--secondary); padding:5px 10px; border-radius:10px; cursor:pointer; font-size:12px">🔓 Unlock</button>
-                <button onclick="logout()" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:5px 10px; border-radius:10px; cursor:pointer; font-size:12px">Logout</button>
+                <button onclick="toggleSecretInput()" class="unlock-pill">🔓 UNLOCK</button>
+                <button onclick="logout()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:12px">Exit</button>
             </div>
         </div>
 
-        <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.2); text-align: center;">
-            <input id="masterKey" type="password" placeholder="Enter Stealth Key..." style="width:200px">
-            <button onclick="applyKey()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; cursor:pointer">Apply</button>
-            <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-left:5px">Add Member</button>
+        <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.3); text-align: center; border-bottom: 1px solid var(--secondary);">
+            <input id="masterKey" type="password" placeholder="Stealth Key..." style="width:200px; margin:0 10px;">
+            <button onclick="applyKey()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; font-weight:bold;">Apply</button>
+            <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; margin-left:5px; font-weight:bold;">Invite</button>
         </div>
 
         <div class="chat-container" id="chatBox"></div>
 
         <div class="input-area">
-            <textarea id="inputText" placeholder="Message..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+            <textarea id="inputText" placeholder="Type something secret..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
             <button class="btn-circle" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
             </button>
         </div>
     </div>
@@ -194,164 +190,142 @@
 
 <div id="groupModal" class="modal">
     <div class="modal-content">
-        <h3>New Group</h3>
+        <h3 style="margin-top:0">New Squad</h3>
         <input id="newGroupName" placeholder="Group Name">
-        <button onclick="createGroup()" style="width:100%; padding:10px; background:var(--accent); border:none; border-radius:10px;">Create</button>
-        <button onclick="closeModal('groupModal')" style="width:100%; margin-top:5px; background:none; border:none; color:white;">Cancel</button>
+        <button onclick="createGroup()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:12px; font-weight:bold;">Create</button>
+        <button onclick="closeModal('groupModal')" style="width:100%; margin-top:10px; background:none; border:none; color:white; opacity:0.5;">Cancel</button>
     </div>
 </div>
 
 <div id="friendModal" class="modal">
     <div class="modal-content">
-        <h3>Add Member</h3>
-        <input id="friendUid" placeholder="Paste Friend UID">
-        <button onclick="addFriend()" style="width:100%; padding:10px; background:var(--accent); border:none; border-radius:10px;">Add to Group</button>
-        <button onclick="closeModal('friendModal')" style="width:100%; margin-top:5px; background:none; border:none; color:white;">Cancel</button>
+        <h3 style="margin-top:0">Add Member</h3>
+        <input id="friendUid" placeholder="Paste User UID">
+        <button onclick="addFriend()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:12px; font-weight:bold;">Add to Group</button>
+        <button onclick="closeModal('friendModal')" style="width:100%; margin-top:10px; background:none; border:none; color:white; opacity:0.5;">Cancel</button>
     </div>
 </div>
 
 <script>
-const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(); const db = firebase.firestore();
-let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
+    // Firebase Setup
+    const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(); const db = firebase.firestore();
+    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
 
-auth.onAuthStateChanged(u => { 
-    if(u){ 
-        userId = u.uid; 
-        document.getElementById("myUidDisplay").innerText = userId;
-        document.getElementById("authBox").style.display="none"; 
-        document.getElementById("app").style.display="flex"; 
-        loadGroups();
-    } else { 
-        document.getElementById("authBox").style.display="block"; 
-        document.getElementById("app").style.display="none"; 
-    } 
-});
+    auth.onAuthStateChanged(u => { 
+        if(u){ 
+            userId = u.uid; 
+            document.getElementById("myUidDisplay").innerText = userId;
+            document.getElementById("authBox").style.display="none"; 
+            document.getElementById("app").style.display="flex"; 
+            loadGroups();
+        } else { 
+            document.getElementById("authBox").style.display="block"; 
+            document.getElementById("app").style.display="none"; 
+        } 
+    });
 
-/* --- NEW: TOGGLE PASSWORD VISIBILITY --- */
-function togglePasswordVisibility() {
-    const pwdInput = document.getElementById("password");
-    const eyeIcon = document.getElementById("eyeIcon");
-    if (pwdInput.type === "password") {
-        pwdInput.type = "text";
-        // Change icon to eye-off (simplified)
-        eyeIcon.style.opacity = "1";
-    } else {
-        pwdInput.type = "password";
-        eyeIcon.style.opacity = "0.6";
+    function togglePasswordVisibility() {
+        const pwdInput = document.getElementById("password");
+        pwdInput.type = pwdInput.type === "password" ? "text" : "password";
     }
-}
 
-function login() { auth.signInWithEmailAndPassword(password.previousElementSibling ? document.getElementById("email").value : email.value, document.getElementById("password").value).catch(e => alert(e.message)); }
+    function login() { auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
+    function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).then(() => alert("Welcome!")).catch(e => alert(e.message)); }
+    function logout() { if(confirm("Logout?")) auth.signOut().then(() => location.reload()); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function signup() {
-    const emailVal = document.getElementById("email").value;
-    const passVal = document.getElementById("password").value;
-    if (!emailVal || !passVal) { alert("Please enter an email and password."); return; }
-    auth.createUserWithEmailAndPassword(emailVal, passVal)
-        .then(() => alert("Account Created!"))
-        .catch(e => alert(e.message));
-}
+    async function createGroup() {
+        const name = document.getElementById("newGroupName").value;
+        if(!name) return;
+        const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
+        closeModal('groupModal');
+        switchGroup(g.id, name);
+    }
 
-function forgotPassword() {
-    const emailField = document.getElementById("email").value;
-    if (!emailField) { alert("Please enter your email address."); return; }
-    auth.sendPasswordResetEmail(emailField).then(() => alert("Reset email sent!")).catch(e => alert(e.message));
-}
-
-function logout() { if(confirm("Sign out?")) auth.signOut().then(() => location.reload()); }
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-async function createGroup() {
-    const name = document.getElementById("newGroupName").value;
-    if(!name) return;
-    const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
-    closeModal('groupModal');
-    switchGroup(g.id, name);
-}
-
-function loadGroups() {
-    db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
-        const list = document.getElementById("groupList");
-        list.innerHTML = "";
-        sn.forEach(doc => {
-            const data = doc.data();
-            const div = document.createElement("div");
-            div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-            div.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--secondary); display:flex; align-items:center; justify-content:center; font-weight:bold">${data.name[0].toUpperCase()}</div>
-                             <div><b>${data.name}</b></div>`;
-            div.onclick = () => switchGroup(doc.id, data.name);
-            list.appendChild(div);
+    function loadGroups() {
+        db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
+            const list = document.getElementById("groupList");
+            list.innerHTML = "";
+            sn.forEach(doc => {
+                const data = doc.data();
+                const div = document.createElement("div");
+                div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
+                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
+                                 <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>`;
+                div.onclick = () => switchGroup(doc.id, data.name);
+                list.appendChild(div);
+            });
         });
-    });
-}
+    }
 
-function switchGroup(id, name) {
-    roomId = id;
-    document.getElementById("activeGroupName").innerText = name;
-    document.getElementById("roomDisplay").innerText = id;
-    loadGroups();
-    listenMessages();
-}
+    function switchGroup(id, name) {
+        roomId = id;
+        document.getElementById("activeGroupName").innerText = name;
+        document.getElementById("roomDisplay").innerText = id;
+        loadGroups();
+        listenMessages();
+    }
 
-async function addFriend() {
-    const fUid = document.getElementById("friendUid").value;
-    if(!fUid || !roomId) return;
-    await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
-    closeModal('friendModal');
-    alert("Member Added!");
-}
+    async function addFriend() {
+        const fUid = document.getElementById("friendUid").value;
+        if(!fUid || !roomId) return;
+        await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
+        closeModal('friendModal');
+        alert("Added!");
+    }
 
-function toggleSecretInput() { 
-    const box = document.getElementById("lockerRoom");
-    if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
-    else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
-}
+    function toggleSecretInput() { 
+        const box = document.getElementById("lockerRoom");
+        if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
+        else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
+    }
 
-function applyKey() { 
-    roomKey = document.getElementById("masterKey").value; 
-    if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } 
-}
+    function applyKey() { 
+        roomKey = document.getElementById("masterKey").value; 
+        if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } 
+    }
 
-function renderAllMessages() {
-    const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
-    allMessages.forEach(m => {
-        let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
-        let content;
-        if(isDecoded) {
-            try {
-                const bytes = CryptoJS.AES.decrypt(m.text, roomKey);
-                content = bytes.toString(CryptoJS.enc.Utf8) || "???";
-            } catch (e) { content = "???"; }
-        } else {
-            content = `<span style="opacity:0.3; font-family:monospace;">${m.text.substring(0,12)}...</span>`;
-        }
-        d.innerHTML = `<div>${content}</div>`;
-        chatBox.appendChild(d);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+    function renderAllMessages() {
+        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+        allMessages.forEach(m => {
+            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+            let content;
+            if(isDecoded) {
+                try {
+                    const bytes = CryptoJS.AES.decrypt(m.text, roomKey);
+                    content = bytes.toString(CryptoJS.enc.Utf8) || "⚠️ Invalid Key";
+                } catch (e) { content = "⚠️ Error"; }
+            } else {
+                content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`;
+            }
+            d.innerHTML = `<div>${content}</div>`;
+            chatBox.appendChild(d);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-function sendMessage() {
-    if(!roomId || !isDecoded) return alert("Select group and Unlock with Key first!");
-    let input = document.getElementById("inputText");
-    if(!input.value.trim()) return;
-    db.collection("groups").doc(roomId).collection("messages").add({ 
-        text: CryptoJS.AES.encrypt(input.value, roomKey).toString(), 
-        sender: userId, 
-        time: Date.now() 
-    });
-    input.value = "";
-}
+    function sendMessage() {
+        if(!roomId || !isDecoded) return alert("Unlock with Key first!");
+        let input = document.getElementById("inputText");
+        if(!input.value.trim()) return;
+        db.collection("groups").doc(roomId).collection("messages").add({ 
+            text: CryptoJS.AES.encrypt(input.value, roomKey).toString(), 
+            sender: userId, 
+            time: Date.now() 
+        });
+        input.value = "";
+        input.style.height = '50px';
+    }
 
-function listenMessages() {
-    if(unsubscribeMessages) unsubscribeMessages();
-    unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
-        allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
-    });
-}
+    function listenMessages() {
+        if(unsubscribeMessages) unsubscribeMessages();
+        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
+            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
+        });
+    }
 </script>
 </body>
 </html>

@@ -8,92 +8,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
-        :root {
-            --bg: #020617;
-            --card: rgba(30, 41, 59, 0.7);
-            --accent: #38bdf8;
-            --secondary: #c084fc;
-            --text: #f8fafc;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            transition: background 0.5s ease;
-        }
-
+        :root { --bg: #020617; --card: rgba(30, 41, 59, 0.7); --accent: #38bdf8; --secondary: #c084fc; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         .theme-picker { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); transition: 0.2s; }
-        .dot:hover { transform: scale(1.2); border-color: white; }
-
-        #authBox {
-            background: var(--card);
-            backdrop-filter: blur(12px);
-            padding: 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            width: 320px;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            letter-spacing: -2px;
-            margin: 10px 0 20px 0;
-            background: linear-gradient(to right, var(--accent), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            cursor: pointer;
-        }
-
-        /* 🚪 LOGOUT BUTTON STYLE */
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 0.7rem;
-            color: var(--accent);
-            text-decoration: none;
-            border: 1px solid var(--accent);
-            padding: 5px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .logout-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 10px var(--accent); }
-
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid #334155;
-            border-radius: 12px;
-            color: white;
-            box-sizing: border-box;
-        }
-
-        button { width: 100%; padding: 12px; margin-top: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
+        #authBox { background: var(--card); backdrop-filter: blur(12px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 320px; }
+        h2 { font-size: 2.5rem; letter-spacing: -2px; margin: 10px 0 20px 0; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
+        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 0.7rem; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
         .btn-main { background: var(--accent); color: #020617; }
-        .btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.85em; }
-
         #app { width: 95%; max-width: 450px; display: none; position: relative; }
         .chat-container { height: 400px; overflow-y: auto; background: rgba(15, 23, 42, 0.8); border-radius: 20px; padding: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05); }
-        .message { padding: 12px 16px; border-radius: 18px; margin: 10px 0; max-width: 80%; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+        .message { padding: 12px 16px; border-radius: 18px; margin: 10px 0; max-width: 80%; font-size: 0.9rem; position: relative; }
         .sent { background: linear-gradient(135deg, var(--accent), var(--secondary)); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
         .received { background: #334155; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: none; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg); }
+        .message:hover .del-btn { display: flex; }
     </style>
 </head>
 <body>
@@ -103,166 +34,102 @@
         <div class="dot" style="background:#38bdf8" onclick="setTheme('blue')"></div>
         <div class="dot" style="background:#f472b6" onclick="setTheme('pink')"></div>
         <div class="dot" style="background:#4ade80" onclick="setTheme('green')"></div>
-        <div class="dot" style="background:#fbbf24" onclick="setTheme('gold')"></div>
     </div>
     <h2>Ciphera</h2>
-    <button class="btn-google" onclick="googleLogin()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="16"> Continue with Google
-    </button>
-    <div style="margin: 15px 0; opacity: 0.2; font-size: 0.7rem;">OR</div>
     <input id="email" placeholder="Email" type="email">
     <input id="password" placeholder="Password" type="password">
     <button class="btn-main" onclick="login()">Login</button>
-    <div style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5; cursor: pointer;" onclick="signup()">Join the Network</div>
 </div>
 
 <div id="app">
     <div class="logout-btn" onclick="logout()">Logout</div>
-
     <h2 onclick="toggleSecretInput()">Ciphera</h2>
-
-    <div id="lockerRoom" style="display:none; text-align:center;">
-        <input id="masterKey" type="password" placeholder="Key..." style="width: 50%; text-align: center;">
-        <button onclick="applyKey()" style="width: 80px; padding: 8px; background: var(--secondary); margin-left: 5px; color: white;">Unlock</button>
+    
+    <div id="lockerRoom" style="display:none; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px;">
+        <input id="masterKey" type="password" placeholder="Key..." style="width: 50%;">
+        <button onclick="applyKey()" style="width: 80px; background: var(--secondary); color: white;">Unlock</button>
+        <button onclick="nukeChat()" style="background: #ef4444; margin-top: 10px; font-size: 0.7rem;">☢️ DELETE ALL MESSAGES</button>
     </div>
 
     <div class="chat-container" id="chatBox"></div>
 
-    <div style="text-align:center;">
-        <textarea id="inputText" placeholder="Say something encrypted..."></textarea>
-        <button class="btn-main" onclick="sendMessage()">Send Message</button>
-        <div style="font-size: 0.6rem; margin-top: 15px; opacity: 0.2; cursor: pointer;" onclick="switchRoom()">v1.0.6 • ROOM: <span id="roomDisplay">...</span></div>
-    </div>
+    <textarea id="inputText" placeholder="Message..."></textarea>
+    <button class="btn-main" onclick="sendMessage()">Send</button>
+    <div style="font-size: 0.6rem; margin-top: 10px; opacity: 0.2; cursor: pointer; text-align: center;" onclick="switchRoom()">v1.0.7 • ROOM: <span id="roomDisplay"></span></div>
 </div>
 
 <script>
-/* ---------------- THEMES ---------------- */
-function setTheme(theme) {
-    const root = document.documentElement;
-    const themes = {
-        blue: { accent: '#38bdf8', secondary: '#c084fc', bg: '#020617' },
-        pink: { accent: '#f472b6', secondary: '#fb7185', bg: '#0f0505' },
-        green: { accent: '#4ade80', secondary: '#2dd4bf', bg: '#050f05' },
-        gold: { accent: '#fbbf24', secondary: '#f59e0b', bg: '#0f0a05' }
-    };
-    root.style.setProperty('--accent', themes[theme].accent);
-    root.style.setProperty('--secondary', themes[theme].secondary);
-    root.style.setProperty('--bg', themes[theme].bg);
-    localStorage.setItem("preferredTheme", theme);
-}
-const savedTheme = localStorage.getItem("preferredTheme");
-if (savedTheme) setTheme(savedTheme);
-
-/* ---------------- FIREBASE ---------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
-  authDomain: "ciphera-1.firebaseapp.com",
-  projectId: "ciphera-1",
-  storageBucket: "ciphera-1.firebasestorage.app",
-  messagingSenderId: "562339080162",
-  appId: "1:562339080162:web:027e5fa3066dea8131bbbb"
-};
+/* --- CONFIG & THEMES --- */
+const firebaseConfig = { apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", authDomain: "ciphera-1.firebaseapp.com", projectId: "ciphera-1", storageBucket: "ciphera-1.firebasestorage.app", messagingSenderId: "562339080162", appId: "1:562339080162:web:027e5fa3066dea8131bbbb" };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
+const auth = firebase.auth(); const db = firebase.firestore();
 let userId, roomId, roomKey, isDecoded = false, allMessages = [];
 
-/* ---------------- AUTH ---------------- */
-function googleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-function signup() { auth.createUserWithEmailAndPassword(email.value, password.value); }
-function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
-
-// NEW LOGOUT FUNCTION
-function logout() {
-    if(confirm("Sign out and lock session?")) {
-        auth.signOut().then(() => {
-            localStorage.removeItem("roomId"); // Forget room ID for security
-            location.reload();
-        });
-    }
+function setTheme(t) {
+    const root = document.documentElement;
+    const th = { blue: { a: '#38bdf8', s: '#c084fc', b: '#020617' }, pink: { a: '#f472b6', s: '#fb7185', b: '#0f0505' }, green: { a: '#4ade80', s: '#2dd4bf', b: '#050f05' } };
+    root.style.setProperty('--accent', th[t].a); root.style.setProperty('--secondary', th[t].s); root.style.setProperty('--bg', th[t].b);
 }
 
-auth.onAuthStateChanged(user => {
-    if (user) {
-        userId = user.uid;
-        document.getElementById("authBox").style.display = "none";
-        document.getElementById("app").style.display = "block";
-        initRoom();
-    } else {
-        document.getElementById("authBox").style.display = "block";
-        document.getElementById("app").style.display = "none";
-    }
-});
+/* --- CORE LOGIC --- */
+auth.onAuthStateChanged(u => { if(u){ userId = u.uid; document.getElementById("authBox").style.display="none"; document.getElementById("app").style.display="block"; initRoom(); } else { document.getElementById("authBox").style.display="block"; document.getElementById("app").style.display="none"; } });
 
-/* ---------------- SYSTEM ---------------- */
-function initRoom() {
-    roomId = localStorage.getItem("roomId") || prompt("Join Room ID:");
-    if (!roomId) return;
-    localStorage.setItem("roomId", roomId);
-    document.getElementById("roomDisplay").innerText = roomId;
-    listenMessages();
-}
+function initRoom() { roomId = localStorage.getItem("roomId") || prompt("Room ID:"); localStorage.setItem("roomId", roomId); document.getElementById("roomDisplay").innerText = roomId; listenMessages(); }
 
-function toggleSecretInput() {
+function toggleSecretInput() { 
     const box = document.getElementById("lockerRoom");
-    if (isDecoded) {
-        isDecoded = false; roomKey = null;
-        renderAllMessages();
-        box.style.display = "none";
-    } else {
-        box.style.display = (box.style.display === "none") ? "block" : "none";
-    }
+    if(isDecoded) { isDecoded = false; roomKey = null; renderAllMessages(); box.style.display = "none"; }
+    else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
 }
 
-function applyKey() {
-    roomKey = document.getElementById("masterKey").value;
-    if (!roomKey) return;
-    isDecoded = true;
-    document.getElementById("lockerRoom").style.display = "none";
-    renderAllMessages();
-}
+function applyKey() { roomKey = document.getElementById("masterKey").value; if(roomKey) { isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; renderAllMessages(); } }
 
 function renderAllMessages() {
-    const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML = "";
-    allMessages.forEach(msg => {
-        let div = document.createElement("div");
-        div.className = "message " + (msg.sender === userId ? "sent" : "received");
-        if (isDecoded) {
-            try {
-                const bytes = CryptoJS.AES.decrypt(msg.text, roomKey);
-                div.innerText = bytes.toString(CryptoJS.enc.Utf8) || "???";
-            } catch (e) { div.innerText = "???"; }
-        } else {
-            div.innerHTML = `<span style="opacity:0.3; font-family:monospace;">${msg.text.substring(0,10)}...</span>`;
-        }
-        chatBox.appendChild(div);
+    const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+    allMessages.forEach(m => {
+        let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+        let content = isDecoded ? (CryptoJS.AES.decrypt(m.text, roomKey).toString(CryptoJS.enc.Utf8) || "???") : m.text.substring(0,10)+"...";
+        
+        // Add Delete Button to sent messages
+        let delHtml = (m.sender === userId) ? `<div class="del-btn" onclick="deleteMsg('${m.id}')">×</div>` : "";
+        
+        d.innerHTML = `${delHtml}<div>${content}</div>`;
+        chatBox.appendChild(d);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function sendMessage() {
-    if (!isDecoded) return alert("System Locked!");
-    let text = document.getElementById("inputText").value;
-    if (!text.trim()) return;
-    db.collection("rooms").doc(roomId).collection("messages").add({
-        text: CryptoJS.AES.encrypt(text, roomKey).toString(),
-        sender: userId,
-        time: Date.now()
-    });
+    if(!isDecoded) return alert("Unlock first!");
+    let t = document.getElementById("inputText").value; if(!t.trim()) return;
+    db.collection("rooms").doc(roomId).collection("messages").add({ text: CryptoJS.AES.encrypt(t, roomKey).toString(), sender: userId, time: Date.now() });
     document.getElementById("inputText").value = "";
 }
 
 function listenMessages() {
-    db.collection("rooms").doc(roomId).collection("messages").orderBy("time", "asc")
-      .onSnapshot(snapshot => {
-          allMessages = [];
-          snapshot.forEach(doc => allMessages.push(doc.data()));
-          renderAllMessages();
-      });
+    db.collection("rooms").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
+        allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
+    });
 }
 
+/* --- DELETE ACTIONS --- */
+function deleteMsg(msgId) {
+    if(confirm("Delete this message forever?")) {
+        db.collection("rooms").doc(roomId).collection("messages").doc(msgId).delete();
+    }
+}
+
+function nukeChat() {
+    if(confirm("☢️ NUKE OPTION: Delete EVERY message in this room? This cannot be undone.")) {
+        db.collection("rooms").doc(roomId).collection("messages").get().then(sn => {
+            sn.forEach(doc => doc.ref.delete());
+        });
+    }
+}
+
+function logout() { auth.signOut().then(() => { localStorage.removeItem("roomId"); location.reload(); }); }
+function login() { auth.signInWithEmailAndPassword(email.value, password.value); }
+function signup() { auth.createUserWithEmailAndPassword(email.value, password.value); }
 function switchRoom() { localStorage.removeItem("roomId"); location.reload(); }
 </script>
 </body>

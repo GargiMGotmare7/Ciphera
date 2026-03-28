@@ -198,7 +198,7 @@
             <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.3); text-align: center; border-bottom: 1px solid var(--secondary);">
                 <input id="masterKey" type="password" placeholder="Stealth Key..." style="width:200px; margin:0 10px;">
                 <button onclick="applyKey()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; font-weight:bold;">Apply</button>
-                
+                <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; margin-left:5px; font-weight:bold;">Invite</button>
             </div>
 
             <div class="chat-container" id="chatBox"></div>
@@ -322,7 +322,6 @@
         document.getElementById("activeGroupName").innerText = name;
         document.getElementById("roomDisplay").innerText = id;
         document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
-        <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; margin-left:5px; font-weight:bold;">Invite</button>
         loadGroups();
         listenMessages();
     }

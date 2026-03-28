@@ -141,7 +141,6 @@
             color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;
         }
 
-        /* --- PLACEHOLDER STYLE --- */
         #placeholderUI {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px);
@@ -173,16 +172,17 @@
             <button onclick="openModal('groupModal')" class="btn-circle" style="width:35px; height:35px;">+</button>
         </div>
         <div class="group-list" id="groupList"></div>
-        <div style="padding: 20px; border-top: 1px solid var(--glass-border); font-size: 10px; opacity: 0.4;">
-            UID: <span id="myUidDisplay">...</span>
+        <div style="padding: 15px 20px; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 10px; opacity: 0.4;">UID: <span id="myUidDisplay">...</span></div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px; font-weight:bold;">LOGOUT</button>
         </div>
     </div>
 
     <div class="main-chat">
         <div id="placeholderUI">
-    <h1 style="opacity: 0.1; font-size: 4rem; letter-spacing: 10px; margin: 0; font-family: 'Comic Sans MS', cursive, sans-serif;">SELECT CHAT</h1>
-    <p style="opacity: 0.3; font-size: 12px; margin-top: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">End-to-end encrypted stealth portal</p>
-</div>
+            <h1 style="opacity: 0.1; font-size: 4rem; letter-spacing: 10px; margin: 0;">SELECT CHAT</h1>
+            <p style="opacity: 0.3; font-size: 12px; margin-top: 10px;">End-to-end encrypted stealth portal</p>
+        </div>
 
         <div id="chatInterface" style="display:none; flex-direction: column; height: 100%;">
             <div class="chat-header">
@@ -192,7 +192,6 @@
                 </div>
                 <div style="display:flex; gap:10px">
                     <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn">🔓 UNLOCK</button>
-                    <button onclick="logout()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:12px">Logout</button>
                 </div>
             </div>
 
@@ -279,9 +278,7 @@
             document.getElementById("newGroupName").value = "";
             closeModal('groupModal');
             switchGroup(g.id, name);
-        } catch(e) { 
-            alert("Permission Error: Ensure Firestore rules are set to public/auth in Firebase Console."); 
-        }
+        } catch(e) { alert("Permission Error"); }
     }
 
     function loadGroups() {
@@ -296,7 +293,6 @@
                     <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
                     <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>
                     <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
-                
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
@@ -305,7 +301,7 @@
 
     async function deleteGroup(event, gId) {
         event.stopPropagation();
-        if (confirm("Delete this Chat? All messages will be lost.")) {
+        if (confirm("Delete this Chat?")) {
             try {
                 await db.collection("groups").doc(gId).delete();
                 if (roomId === gId) {
@@ -313,16 +309,13 @@
                     document.getElementById("placeholderUI").style.display = "flex";
                     document.getElementById("chatInterface").style.display = "none";
                 }
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
+            } catch (e) { alert(e.message); }
         }
     }
 
     function switchGroup(id, name) {
         document.getElementById("placeholderUI").style.display = "none";
         document.getElementById("chatInterface").style.display = "flex";
-
         roomId = id;
         isDecoded = false; 
         roomKey = null;
@@ -381,8 +374,7 @@
     }
 
     function sendMessage() {
-        if(!roomId) return alert("Select a Chat!");
-        if(!isDecoded) return alert("Unlock first!");
+        if(!roomId || !isDecoded) return;
         let input = document.getElementById("inputText");
         let txt = input.value.trim();
         if(!txt) return;
@@ -399,11 +391,7 @@
         if(unsubscribeMessages) unsubscribeMessages();
         unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
-        }, (error) => {
-            if(error.code === 'permission-denied') {
-                console.log("Stopped listening to messages.");
-            }
-        });
+        }, (error) => { console.log("Listen error"); });
     }
 </script>
 </body>

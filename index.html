@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <title>Ciphera</title>
     <style>
         body {
@@ -79,15 +79,28 @@
 <div class="chat-container" id="chatBox"></div>
 
 <script>
-    // 🔥 Firebase setup
+   // 🔥 Firebase setup FIRST
 const firebaseConfig = {
   apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
   authDomain: "ciphera-1.firebaseapp.com",
   projectId: "ciphera-1",
+  storageBucket: "ciphera-1.firebasestorage.app",
+  messagingSenderId: "562339080162",
+  appId: "1:562339080162:web:027e5fa3066dea8131bbbb",
+  measurementId: "G-ZG2K9P4H8L"
 };
 
+
+// THEN initialize
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+let userId = localStorage.getItem("userId");
+
+if (!userId) {
+    userId = "user_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("userId", userId);
+}
 let secret = "1234";
 
 function encode(text) {
@@ -129,10 +142,10 @@ function sendMessage() {
     let encoded = encode(text);
 
     db.collection("messages").add({
-        text: encoded,
-        sender: "me",
-        time: Date.now()
-    });
+    text: encoded,
+    sender: userId,
+    time: Date.now()
+});
 
     document.getElementById("inputText").value = "";
 }
@@ -194,7 +207,10 @@ db.collection("messages")
     snapshot.forEach(doc => {
         let data = doc.data();
 
-       createMessage(data.text, data.sender === "me" ? "sent" : "received");
+       createMessage(
+    data.text,
+    data.sender === userId ? "sent" : "received"
+);
     });
 });
 </script>

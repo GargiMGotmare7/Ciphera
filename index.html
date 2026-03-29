@@ -93,9 +93,9 @@
         .group-item:hover .delete-grp-btn { opacity: 1; }
         .delete-grp-btn:hover { background: var(--danger); color: white; }
 
-        /* MESSAGE ACTION BUTTONS - MOVED TO LEFT */
+        /* MESSAGE ACTION BUTTONS */
         .msg-actions {
-            position: absolute; top: 50%; left: -60px; transform: translateY(-50%); 
+            position: absolute; top: 50%; transform: translateY(-50%); 
             display: flex; gap: 8px; opacity: 0; transition: 0.2s;
         }
         .sent .msg-actions { left: -65px; flex-direction: row; }
@@ -111,12 +111,12 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI - WHATSAPP STYLE */
+        /* REPLY UI - INCREASED SIZE */
         .reply-preview {
-            background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent);
-            padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 11px;
-            opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; 
-            white-space: nowrap; color: var(--accent);
+            background: rgba(0,0,0,0.2); border-left: 4px solid var(--accent);
+            padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 12px;
+            opacity: 0.9; width: 100%; overflow: hidden; text-overflow: ellipsis; 
+            white-space: nowrap; color: var(--accent); display: block;
         }
 
         #replyBar {

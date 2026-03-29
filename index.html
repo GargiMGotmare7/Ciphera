@@ -111,12 +111,12 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI */
+        /* REPLY UI - UPDATED SIZE AND STYLE */
         .reply-preview {
-            background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent);
-            padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 11px;
-            opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; 
-            white-space: nowrap; color: var(--accent);
+            background: rgba(0,0,0,0.25); border-left: 4px solid var(--accent);
+            padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px;
+            opacity: 0.9; max-width: 100%; min-width: 120px; overflow: hidden; 
+            text-overflow: ellipsis; white-space: nowrap; color: var(--accent);
         }
 
         #replyBar {
@@ -430,14 +430,20 @@
 
             let replyHtml = "";
             if (m.replyTo && isDecoded) {
-                try {
-                    const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
-                    const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                    replyHtml = `<div class="reply-preview">${rText}</div>`;
-                } catch(e) { replyHtml = `<div class="reply-preview">Encrypted</div>`; }
+                // CHECK IF ORIGINAL MESSAGE STILL EXISTS
+                const originalMsg = allMessages.find(msg => msg.id === m.replyTo.id);
+                if (originalMsg) {
+                    try {
+                        const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
+                        const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
+                        replyHtml = `<div class="reply-preview">${rText}</div>`;
+                    } catch(e) { replyHtml = `<div class="reply-preview">Encrypted</div>`; }
+                } else {
+                    // MESSAGE WAS DELETED
+                    replyHtml = `<div class="reply-preview" style="font-style:italic; opacity:0.6;">Original message deleted</div>`;
+                }
             }
 
-            // ONLY ADD ACTION BUTTONS IF THE CHAT IS DECODED/UNLOCKED
             let actionButtons = "";
             if(isDecoded) {
                 actionButtons = `
@@ -456,7 +462,7 @@
     }
 
     async function deleteMessage(msgId) {
-        if (!isDecoded) return; // Guard against locked interaction
+        if (!isDecoded) return;
         if (confirm("Delete this message?")) {
             try {
                 await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();

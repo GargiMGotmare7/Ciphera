@@ -199,7 +199,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="openModal('profileModal')">
-                <img id="myAvatar" src="https://ui-avatars.com/api/?name=?" class="profile-pic">
+                <img id="myAvatar" src="https://ui-avatars.com/api/?name=User&length=2" class="profile-pic">
                 <div>
                     <b id="myNameDisplay" style="display:block; font-size:14px;">User</b>
                     <small style="font-size:9px; color:var(--accent)">Edit Profile</small>
@@ -320,24 +320,32 @@
     });
 
     async function syncProfile() {
-        const userDoc = await db.collection("users").doc(userId).get();
-        if(userDoc.exists) {
-            currentUserProfile = userDoc.data();
-            document.getElementById("myNameDisplay").innerText = currentUserProfile.username;
-            document.getElementById("profUsername").value = currentUserProfile.username;
-            document.getElementById("profPicUrl").value = currentUserProfile.photoURL || "";
-            document.getElementById("myAvatar").src = currentUserProfile.photoURL || `https://ui-avatars.com/api/?name=${currentUserProfile.username}`;
-        } else {
-            openModal('profileModal');
-        }
+        try {
+            const userDoc = await db.collection("users").doc(userId).get();
+            if(userDoc.exists) {
+                currentUserProfile = userDoc.data();
+                document.getElementById("myNameDisplay").innerText = currentUserProfile.username;
+                document.getElementById("profUsername").value = currentUserProfile.username;
+                document.getElementById("profPicUrl").value = currentUserProfile.photoURL || "";
+                document.getElementById("myAvatar").src = currentUserProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserProfile.username)}&length=2&background=random&color=fff`;
+            } else {
+                openModal('profileModal');
+            }
+        } catch(e) { console.error("Sync error:", e); }
     }
 
     async function saveProfile() {
         const name = document.getElementById("profUsername").value.trim() || "User";
         const pic = document.getElementById("profPicUrl").value.trim();
-        await db.collection("users").doc(userId).set({ username: name, photoURL: pic });
-        closeModal('profileModal');
-        syncProfile();
+        try {
+            await db.collection("users").doc(userId).set({ 
+                username: name, 
+                photoURL: pic 
+            }, { merge: true });
+            closeModal('profileModal');
+            syncProfile();
+            alert("Profile Saved!");
+        } catch(e) { alert("Error saving: " + e.message); }
     }
 
     function togglePasswordVisibility() {
@@ -474,7 +482,6 @@
                 ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
-            // Show sender name if available
             let senderName = m.senderName || "Unknown";
             d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div>${content}${editedTag}</div>${actionButtons}`;
             chatBox.appendChild(d);
@@ -505,7 +512,7 @@
             const msgData = { 
                 text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
                 sender: userId,
-                senderName: currentUserProfile.username, // Store current name with message
+                senderName: currentUserProfile.username, 
                 time: Date.now(),
                 edited: false 
             };

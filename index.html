@@ -15,7 +15,7 @@
             --bg: #020617;
             --sidebar: rgba(15, 23, 42, 0.6);
             --card: rgba(30, 41, 59, 0.4);
-            --accent: #ffffff;
+            --accent: #38bdf8;
             --secondary: #c084fc;
             --text: #f1f5f9;
             --glass-border: rgba(255, 255, 255, 0.1);
@@ -110,31 +110,43 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY BUBBLE STYLE */
+        /* --- FIXED VISIBLE REPLY BUBBLE STYLE --- */
         .reply-wrapper {
             position: relative;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             overflow: hidden;
             display: flex;
-            align-items: flex-start;
+            align-items: stretch; /* Ensures bar matches height of text box */
+            background: rgba(0, 0, 0, 0.2); /* Darker inner tint for contrast */
+            border-radius: 8px;
         }
 
         .reply-bar-accent {
-            width: 4px; height: 100%; border-radius: 4px;
-            flex-shrink: 0; background: var(--accent); margin-right: 8px;
+            width: 4px; 
+            flex-shrink: 0; 
+            background: var(--accent); 
         }
 
         .received .reply-bar-accent { background: var(--secondary); }
 
         .reply-preview-text {
-            background: transparent; padding: 4px 0; border-radius: 8px;
-            font-size: 11px; opacity: 1; max-width: 100%; min-width: 120px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent);
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #ffffff; /* FORCE BRIGHT WHITE FOR READABILITY */
+            max-width: 100%;
+            min-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .received .reply-preview-text { color: var(--secondary); }
+        
+        /* Highlight labels/colors for different message types */
+        .sent .reply-preview-text { color: #e0f2fe; }
+        .received .reply-preview-text { color: #f3e8ff; }
 
         #replyBar {
-            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.05);
+            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.1);
             border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
         }
 
@@ -149,7 +161,7 @@
 
         .message { 
             position: relative; padding: 12px 18px; border-radius: 20px; margin: 8px 0; 
-            max-width: 70%; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word;
+            max-width: 75%; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word;
         }
         .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); }
         .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
@@ -226,11 +238,11 @@
             <div class="chat-container" id="chatBox"></div>
 
             <div id="replyBar">
-                <div class="reply-wrapper" id="replyPreviewArea">
+                <div class="reply-wrapper" id="replyPreviewArea" style="flex:1; margin-right:15px;">
                     <div class="reply-bar-accent"></div>
                     <div class="reply-preview-text" id="replyPreviewText"></div>
                 </div>
-                <button onclick="cancelReply()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
+                <button onclick="cancelReply()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:18px;">✕</button>
             </div>
 
             <div class="input-area">
@@ -243,25 +255,8 @@
     </div>
 </div>
 
-<div id="groupModal" class="modal">
-    <div class="modal-content">
-        <h3 style="margin-top:0">New Chat</h3>
-        <input id="newGroupName" placeholder="Enter chat name">
-        <button onclick="createGroup()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:12px; font-weight:bold;">Create</button>
-        <button onclick="closeModal('groupModal')" style="width:100%; margin-top:10px; background:none; border:none; color:white; opacity:0.5;">Cancel</button>
-    </div>
-</div>
-
-<div id="friendModal" class="modal">
-    <div class="modal-content">
-        <h3 style="margin-top:0">Add Member</h3>
-        <input id="friendUid" placeholder="Paste User UID">
-        <button onclick="addFriend()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:12px; font-weight:bold;">Add to Group</button>
-        <button onclick="closeModal('friendModal')" style="width:100%; margin-top:10px; background:none; border:none; color:white; opacity:0.5;">Cancel</button>
-    </div>
-</div>
-
 <script>
+    // --- FIREBASE INIT FIXED ---
     const firebaseConfig = { 
         apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
         authDomain: "ciphera-1.firebaseapp.com", 

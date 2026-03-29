@@ -83,6 +83,7 @@
         .group-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
 
+        /* DELETION STYLES */
         .delete-grp-btn {
             position: absolute; top: 10px; right: 10px;
             width: 22px; height: 22px; border-radius: 50%;
@@ -92,6 +93,16 @@
         }
         .group-item:hover .delete-grp-btn { opacity: 1; }
         .delete-grp-btn:hover { background: var(--danger); color: white; }
+
+        .delete-msg-btn {
+            position: absolute; top: 5px; right: 5px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2); color: var(--danger);
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 8px; opacity: 0; transition: opacity 0.2s;
+        }
+        .message:hover .delete-msg-btn { opacity: 1; }
+        .delete-msg-btn:hover { background: var(--danger); color: white; }
 
         /* --- CHAT AREA --- */
         .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
@@ -104,6 +115,7 @@
         .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
         .message { 
+            position: relative;
             padding: 12px 18px; border-radius: 20px; margin: 6px 0; 
             max-width: 70%; font-size: 0.95rem; line-height: 1.4;
             word-wrap: break-word;
@@ -355,9 +367,12 @@
     }
 
     function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+        const chatBox = document.getElementById("chatBox"); 
+        chatBox.innerHTML = "";
         allMessages.forEach(m => {
-            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+            let d = document.createElement("div"); 
+            d.className = "message " + (m.sender === userId ? "sent" : "received");
+            
             let content;
             if(isDecoded) {
                 try {
@@ -367,10 +382,23 @@
             } else {
                 content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`;
             }
-            d.innerHTML = `<div>${content}</div>`;
+
+            // Added deletion button for individual messages (shows on hover)
+            const deleteBtn = m.sender === userId ? 
+                `<button class="delete-msg-btn" onclick="deleteMessage('${m.id}')">✕</button>` : '';
+
+            d.innerHTML = `<div>${content}</div>${deleteBtn}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function deleteMessage(msgId) {
+        if (confirm("Delete this message?")) {
+            try {
+                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();
+            } catch (e) { alert(e.message); }
+        }
     }
 
     function sendMessage() {

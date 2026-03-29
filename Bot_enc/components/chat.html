@@ -37,12 +37,31 @@
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
+    // 1. Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans",
+        authDomain: "ciphera-1.firebaseapp.com",
+        databaseURL: "https://ciphera-1-default-rtdb.firebaseio.com/",
+        projectId: "ciphera-1",
+        storageBucket: "ciphera-1.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "1:562339080162:web:027e5fa3066dea8131bbbb"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
     (function() {
         const dot = document.getElementById('statusDot');
         const text = document.getElementById('statusLabel');
 
-        // 1. Function to update the UI visuals
         function updateUI(isOnline) {
             if (isOnline) {
                 dot.style.backgroundColor = "#2ecc71"; 
@@ -57,8 +76,7 @@
             }
         }
 
-        // 2. Firebase Presence Logic
-        // This monitors the connection and updates YOUR status in the DB
+        // Set YOUR status to online
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 const myStatusRef = firebase.database().ref('status/' + user.uid);
@@ -66,29 +84,19 @@
 
                 connectedRef.on('value', (snap) => {
                     if (snap.val() === true) {
-                        // If I close the tab, set me to offline automatically
                         myStatusRef.onDisconnect().set({ state: 'offline' });
-                        // Set me to online now
                         myStatusRef.set({ state: 'online' });
                     }
                 });
             }
         });
 
-        /** * 3. Monitoring the OTHER person 
-         * Replace 'TARGET_USER_ID' with the actual ID of the person you are chatting with.
-         * Usually, you would update this variable whenever you click a chat name.
-         */
-        function watchPartnerStatus(partnerId) {
+        // Watch the partner (this function needs a partnerId to work)
+        window.watchPartnerStatus = function(partnerId) {
             firebase.database().ref('status/' + partnerId).on('value', (snapshot) => {
                 const data = snapshot.val();
-                const isOnline = data && data.state === 'online';
-                updateUI(isOnline);
+                updateUI(data && data.state === 'online');
             });
-        }
-
-        // Example: If you have a variable for the room/partner, call it like:
-        // watchPartnerStatus('some-user-id');
-
+        };
     })();
 </script>

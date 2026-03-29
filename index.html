@@ -95,7 +95,7 @@
 
         /* MESSAGE ACTION BUTTONS */
         .msg-actions {
-            position: absolute; top: 50%; transform: translateY(-50%); 
+            position: absolute; top: 50%; left: -60px; transform: translateY(-50%); 
             display: flex; gap: 8px; opacity: 0; transition: 0.2s;
         }
         .sent .msg-actions { left: -65px; flex-direction: row; }
@@ -111,12 +111,12 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI - INCREASED SIZE */
+        /* REPLY UI */
         .reply-preview {
-            background: rgba(0,0,0,0.2); border-left: 4px solid var(--accent);
-            padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 12px;
-            opacity: 0.9; width: 100%; overflow: hidden; text-overflow: ellipsis; 
-            white-space: nowrap; color: var(--accent); display: block;
+            background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent);
+            padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 11px;
+            opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; 
+            white-space: nowrap; color: var(--accent);
         }
 
         #replyBar {
@@ -437,13 +437,17 @@
                 } catch(e) { replyHtml = `<div class="reply-preview">Encrypted</div>`; }
             }
 
-            const actionButtons = `
-                <div class="msg-actions">
-                    <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg>
-                    </button>
-                    ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
-                </div>`;
+            // ONLY ADD ACTION BUTTONS IF THE CHAT IS DECODED/UNLOCKED
+            let actionButtons = "";
+            if(isDecoded) {
+                actionButtons = `
+                    <div class="msg-actions">
+                        <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg>
+                        </button>
+                        ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+                    </div>`;
+            }
 
             d.innerHTML = `${replyHtml}<div>${content}</div>${actionButtons}`;
             chatBox.appendChild(d);
@@ -452,6 +456,7 @@
     }
 
     async function deleteMessage(msgId) {
+        if (!isDecoded) return; // Guard against locked interaction
         if (confirm("Delete this message?")) {
             try {
                 await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();

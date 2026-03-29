@@ -93,29 +93,35 @@
         .group-item:hover .delete-grp-btn { opacity: 1; }
         .delete-grp-btn:hover { background: var(--danger); color: white; }
 
-        /* MESSAGE ACTION BUTTONS */
+        /* MESSAGE ACTION BUTTONS - MOVED TO LEFT */
         .msg-actions {
-            position: absolute; top: -10px; right: 0; display: flex; gap: 5px; opacity: 0; transition: 0.2s;
+            position: absolute; top: 50%; left: -60px; transform: translateY(-50%); 
+            display: flex; gap: 8px; opacity: 0; transition: 0.2s;
         }
-        .message:hover .msg-actions { opacity: 1; top: -15px; }
+        .sent .msg-actions { left: -65px; flex-direction: row; }
+        .received .msg-actions { right: -65px; left: auto; flex-direction: row-reverse; }
+
+        .message:hover .msg-actions { opacity: 1; }
         
         .action-btn {
-            width: 24px; height: 24px; border-radius: 50%; border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 10px; color: white;
+            width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 12px; 
+            color: white; background: rgba(255,255,255,0.1); backdrop-filter: blur(5px);
         }
-        .del-btn { background: var(--danger); }
-        .rep-btn { background: var(--accent); }
+        .del-btn:hover { background: var(--danger); }
+        .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI */
+        /* REPLY UI - WHATSAPP STYLE */
         .reply-preview {
-            background: rgba(255,255,255,0.1); border-left: 3px solid var(--accent);
-            padding: 8px 12px; border-radius: 10px; margin-bottom: 5px; font-size: 11px;
-            max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent);
+            padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 11px;
+            opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; 
+            white-space: nowrap; color: var(--accent);
         }
 
         #replyBar {
-            display: none; padding: 10px 25px; background: rgba(56, 189, 248, 0.1);
-            border-top: 1px solid var(--accent); justify-content: space-between; align-items: center;
+            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.05);
+            border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
         }
 
         /* --- CHAT AREA --- */
@@ -130,7 +136,7 @@
 
         .message { 
             position: relative;
-            padding: 12px 18px; border-radius: 20px; margin: 12px 0; 
+            padding: 12px 18px; border-radius: 20px; margin: 8px 0; 
             max-width: 70%; font-size: 0.95rem; line-height: 1.4;
             word-wrap: break-word;
         }
@@ -229,7 +235,7 @@
             <div class="chat-container" id="chatBox"></div>
 
             <div id="replyBar">
-                <div id="replyPreviewText" style="font-size: 12px; opacity: 0.8;"></div>
+                <div id="replyPreviewText" style="font-size: 12px; opacity: 0.8; border-left: 3px solid var(--accent); padding-left: 10px;"></div>
                 <button onclick="cancelReply()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
             </div>
 
@@ -275,7 +281,7 @@
     const db = firebase.firestore();
 
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
-    let replyingTo = null; // Stores message being replied to
+    let replyingTo = null;
 
     auth.onAuthStateChanged(u => { 
         if(u){ 
@@ -396,7 +402,7 @@
         
         replyingTo = { id, text: encryptedText, plain: plainText };
         document.getElementById("replyBar").style.display = "flex";
-        document.getElementById("replyPreviewText").innerText = "Replying to: " + plainText;
+        document.getElementById("replyPreviewText").innerText = plainText;
         document.getElementById("inputText").focus();
     }
 
@@ -422,19 +428,20 @@
                 content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`;
             }
 
-            // Reply Preview inside message
             let replyHtml = "";
             if (m.replyTo && isDecoded) {
                 try {
                     const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
                     const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                    replyHtml = `<div class="reply-preview">↳ ${rText}</div>`;
-                } catch(e) { replyHtml = `<div class="reply-preview">↳ Encrypted</div>`; }
+                    replyHtml = `<div class="reply-preview">${rText}</div>`;
+                } catch(e) { replyHtml = `<div class="reply-preview">Encrypted</div>`; }
             }
 
             const actionButtons = `
                 <div class="msg-actions">
-                    <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⤴</button>
+                    <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg>
+                    </button>
                     ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
                 </div>`;
 

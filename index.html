@@ -95,11 +95,11 @@
 
         /* MESSAGE ACTIONS */
         .msg-actions {
-            position: absolute; top: 50%; left: -90px; transform: translateY(-50%); 
-            display: flex; gap: 5px; opacity: 0; transition: 0.2s;
+            position: absolute; top: 50%; left: -125px; transform: translateY(-50%); 
+            display: flex; gap: 5px; opacity: 0; transition: 0.2s; z-index: 5;
         }
-        .sent .msg-actions { left: -90px; flex-direction: row; }
-        .received .msg-actions { right: -65px; left: auto; flex-direction: row-reverse; }
+        .sent .msg-actions { left: -125px; flex-direction: row; }
+        .received .msg-actions { right: -125px; left: auto; flex-direction: row-reverse; }
         .message:hover .msg-actions { opacity: 1; }
         
         .action-btn {
@@ -110,6 +110,18 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
         .edit-btn:hover { background: var(--secondary); }
+        .react-btn:hover { background: #10b981; }
+
+        /* REACTION PILLS */
+        .reactions-container {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+        }
+        .reaction-pill {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            padding: 2px 8px; border-radius: 10px; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .reaction-pill.active { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); }
 
         /* --- FIXED VISIBLE REPLY BUBBLE STYLE --- */
         .reply-wrapper {
@@ -257,6 +269,23 @@
     </div>
 </div>
 
+<div id="reactionModal" class="modal">
+    <div class="modal-content" style="width:auto; max-width: 300px; text-align:center;">
+        <h3 style="margin-top:0; color:var(--accent); font-size:14px;">React to Message</h3>
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; font-size:24px;">
+            <span style="cursor:pointer" onclick="addReaction('👍')">👍</span>
+            <span style="cursor:pointer" onclick="addReaction('❤️')">❤️</span>
+            <span style="cursor:pointer" onclick="addReaction('😂')">😂</span>
+            <span style="cursor:pointer" onclick="addReaction('😮')">😮</span>
+            <span style="cursor:pointer" onclick="addReaction('😢')">😢</span>
+            <span style="cursor:pointer" onclick="addReaction('🔥')">🔥</span>
+            <span style="cursor:pointer" onclick="addReaction('💯')">💯</span>
+            <span style="cursor:pointer" onclick="addReaction('✅')">✅</span>
+        </div>
+        <button onclick="closeModal('reactionModal')" style="margin-top:15px; background:transparent; border:1px solid var(--glass-border); color:white; padding:8px 15px; border-radius:10px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
 <div id="profileModal" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--accent);">User Profile</h3>
@@ -305,7 +334,7 @@
     const auth = firebase.auth(); 
     const db = firebase.firestore();
 
-    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null;
+    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
 
     auth.onAuthStateChanged(u => { 
@@ -452,6 +481,34 @@
         document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>';
     }
 
+    function openReaction(id) {
+        if(!isDecoded) return;
+        reactingToId = id;
+        openModal('reactionModal');
+    }
+
+    async function addReaction(emoji) {
+        if(!reactingToId || !roomId) return;
+        const msgRef = db.collection("groups").doc(roomId).collection("messages").doc(reactingToId);
+        
+        try {
+            const doc = await msgRef.get();
+            const reactions = doc.data().reactions || {};
+            if(!reactions[emoji]) reactions[emoji] = [];
+            
+            if(reactions[emoji].includes(userId)) {
+                reactions[emoji] = reactions[emoji].filter(u => u !== userId);
+                if(reactions[emoji].length === 0) delete reactions[emoji];
+            } else {
+                reactions[emoji].push(userId);
+            }
+            
+            await msgRef.update({ reactions });
+            closeModal('reactionModal');
+            reactingToId = null;
+        } catch(e) { console.error(e); }
+    }
+
     function renderAllMessages() {
         const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
         allMessages.forEach(m => {
@@ -475,15 +532,30 @@
                 }
             }
 
+            // Reactions Logic
+            let reactionHtml = "";
+            if(m.reactions && isDecoded) {
+                reactionHtml = `<div class="reactions-container">`;
+                for(let emoji in m.reactions) {
+                    let count = m.reactions[emoji].length;
+                    let active = m.reactions[emoji].includes(userId) ? 'active' : '';
+                    if(count > 0) {
+                        reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
+                    }
+                }
+                reactionHtml += `</div>`;
+            }
+
             let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
             let actionButtons = isDecoded ? `<div class="msg-actions">
+                <button class="action-btn react-btn" onclick="openReaction('${m.id}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12,2C6.47,2,2,6.47,2,12s4.47,10,10,10s10-4.47,10-10S17.53,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M15.5,11c0.83,0,1.5-0.67,1.5-1.5S16.33,8,15.5,8S14,8.67,14,9.5S14.67,11,15.5,11z M8.5,11 c0.83,0,1.5-0.67,1.5-1.5S9.33,8,8.5,8S7,8.67,7,9.5S7.67,11,8.5,11z M12,17.5c2.33,0,4.31-1.46,5.11-3.5H6.89 C7.69,16.04,9.67,17.5,12,17.5z"/></svg></button>
                 <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg></button>
                 ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/></svg></button>` : ''}
                 ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
             let senderName = m.senderName || "Unknown";
-            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div>${content}${editedTag}</div>${actionButtons}`;
+            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div>${content}${editedTag}</div>${reactionHtml}${actionButtons}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -514,7 +586,8 @@
                 sender: userId,
                 senderName: currentUserProfile.username, 
                 time: Date.now(),
-                edited: false 
+                edited: false,
+                reactions: {} 
             };
             if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
             db.collection("groups").doc(roomId).collection("messages").add(msgData);

@@ -1,0 +1,34 @@
+<div class="main-chat">
+    <div id="placeholderUI">
+        <h1 style="opacity: 0.1; font-size: 4rem; letter-spacing: 10px; margin: 0;">SELECT CHAT</h1>
+        <p style="opacity: 0.3; font-size: 12px; margin-top: 10px;">End-to-end encrypted stealth portal</p>
+    </div>
+
+    <div id="chatInterface" style="display:none; flex-direction: column; height: 100%;">
+        <div class="chat-header">
+            <div>
+                <b id="activeGroupName" style="font-size: 1.2rem;">Select Chat</b><br>
+                <small id="roomDisplay" style="opacity:0.4; font-size:9px"></small>
+            </div>
+            <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn">🔓 UNLOCK</button>
+        </div>
+
+        <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.3); text-align: center;">
+            <input id="masterKey" type="password" placeholder="Stealth Key..." style="width:200px;">
+            <button onclick="applyKey()" style="background:var(--accent); padding:10px;">Apply</button>
+            <button onclick="openModal('friendModal')" style="background:var(--secondary); padding:10px;">Invite</button>
+        </div>
+
+        <div class="chat-container" id="chatBox"></div>
+
+        <div id="replyBar" style="display:none;">
+            <div id="replyPreviewText"></div>
+            <button onclick="cancelReply()">✕</button>
+        </div>
+
+        <div class="input-area">
+            <textarea id="inputText" placeholder="Type something secret..."></textarea>
+            <button class="btn-circle" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,14 @@
+<div id="authBox">
+    <h2>Ciphera</h2>
+    <input id="email" placeholder="Email" type="email">
+    <div class="password-wrapper" style="position: relative;">
+        <input id="password" placeholder="Password" type="password">
+        <button class="eye-btn" onclick="togglePasswordVisibility()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--accent);">
+            <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        </button>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 14px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer;">Login</button>
+        <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer;">Sign Up</button>
+    </div>
+</div>

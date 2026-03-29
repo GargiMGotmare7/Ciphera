@@ -3,100 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ciphera | Stealth</title>
+    <title>Ciphera | Stealth Portal</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --bg: #020617; --sidebar: rgba(15, 23, 42, 0.6); --card: rgba(30, 41, 59, 0.4);
+            --accent: #38bdf8; --secondary: #c084fc; --text: #f1f5f9;
+            --glass-border: rgba(255, 255, 255, 0.1); --danger: #ef4444;
+        }
+        * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #020617);
+            color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden;
+        }
+        /* Keep all your CSS from the original file here */
+        #authBox { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); backdrop-filter: blur(25px); padding: 40px; border-radius: 30px; border: 1px solid var(--glass-border); text-align: center; width: 350px; z-index: 100; }
+        #app { display: none; width: 100%; height: 100%; flex-direction: row; }
+        .sidebar { width: 320px; background: var(--sidebar); backdrop-filter: blur(15px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
+        input, textarea { width: 100%; padding: 14px; margin: 10px 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 15px; color: white; outline: none; }
+        .btn-circle { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .message { position: relative; padding: 12px 18px; border-radius: 20px; margin: 8px 0; max-width: 75%; }
+        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; }
+        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
+        .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
+        /* Include the rest of your specific CSS classes here... */
+    </style>
 </head>
 <body>
 
-    <section id="hero">
-        <div class="theme-picker">
-            <div class="dot" style="background:#38bdf8" onclick="setTheme('blue')"></div>
-            <div class="dot" style="background:#f472b6" onclick="setTheme('pink')"></div>
-            <div class="dot" style="background:#4ade80" onclick="setTheme('green')"></div>
-            <div class="dot" style="background:#fbbf24" onclick="setTheme('gold')"></div>
-        </div>
-        <div class="glow-sphere"></div>
-        <div class="hero-content">
-            <div class="badge">v1.2.0 Stealth Protocol</div>
-            <h1>CIPHERA<span>.</span></h1>
-            <p>End-to-end encrypted chats.<br>Your data stays in the shadows.</p>
-            <button class="btn-primary" id="enterBtn">Enter the Void</button>
-        </div>
-    </section>
-
-    <div id="authBox" style="display: none;">
-        <h2>Ciphera</h2>
-        <button class="btn-google" id="googleLoginBtn">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="16"> Continue with Google
-        </button>
-        <div class="divider">OR</div>
-        <input id="email" placeholder="Email" type="email">
-        <input id="password" placeholder="Password" type="password">
-        <button id="loginBtn" class="btn-main">Access Terminal</button>
-        <div id="signupLink" class="sub-link">Join the Network</div>
+    <div id="auth-target"></div>
+    <div id="app">
+        <div id="sidebar-target" style="display: contents;"></div>
+        <div id="chat-target" style="display: contents;"></div>
     </div>
 
-    <div id="app" style="display: none;">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h3>Chats</h3>
-                <button id="openGroupModalBtn" class="btn-circle">+</button>
-            </div>
-            <div class="group-list" id="groupList"></div>
-            <div class="uid-tag">UID: <span id="myUidDisplay">...</span></div>
-        </div>
+    <div id="modal-target"></div>
 
-        <div class="main-chat">
-            <div class="chat-header">
-                <div>
-                    <b id="activeGroupName">Select a chat</b><br>
-                    <small id="roomDisplay" style="opacity:0.4; font-size:10px"></small>
-                </div>
-                <div class="header-btns">
-                    <button id="unlockBtn">🔓 Unlock</button>
-                    <button id="logoutBtn">Logout</button>
-                </div>
-            </div>
+    <script>
+        // COMPONENT LOADER FUNCTION
+        async function load(id, url) {
+            const res = await fetch(url);
+            document.getElementById(id).innerHTML = await res.text();
+        }
 
-            <div id="lockerRoom" style="display:none;">
-                <input id="masterKey" type="password" placeholder="Stealth Key...">
-                <div class="locker-controls">
-                    <button id="applyKeyBtn">Apply</button>
-                    <button id="openFriendModalBtn">Add Member</button>
-                </div>
-            </div>
+        // INIT SYSTEM
+        async function init() {
+            await load('auth-target', 'components/auth.html');
+            await load('sidebar-target', 'components/sidebar.html');
+            await load('chat-target', 'components/chat.html');
+            await load('modal-target', 'components/modals.html');
 
-            <div class="chat-container" id="chatBox"></div>
+            // --- PASTE YOUR FIREBASE CONFIG & ALL JS FUNCTIONS BELOW THIS LINE ---
+            const firebaseConfig = { 
+                apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
+                authDomain: "ciphera-1.firebaseapp.com", 
+                projectId: "ciphera-1", 
+                storageBucket: "ciphera-1.firebasestorage.app", 
+                messagingSenderId: "562339080162", 
+                appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
+            };
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth(); 
+            const db = firebase.firestore();
 
-            <div class="input-area">
-                <textarea id="inputText" placeholder="Message..." rows="1"></textarea>
-                <button id="sendBtn" class="btn-circle">➤</button>
-            </div>
-        </div>
-    </div>
+            // All your variables (userId, roomId, etc) and functions (login, sendMessage, etc) go here.
+            // [COPY THE REST OF YOUR <SCRIPT> CONTENT FROM YOUR ORIGINAL FILE HERE]
+        }
 
-    <div id="groupModal" class="modal">
-        <div class="modal-content">
-            <h3>New Group</h3>
-            <input id="newGroupName" placeholder="Group Name">
-            <button id="confirmGroupBtn" class="btn-main">Create</button>
-            <button class="close-modal" onclick="closeModal('groupModal')">Cancel</button>
-        </div>
-    </div>
-
-    <div id="friendModal" class="modal">
-        <div class="modal-content">
-            <h3>Add Member</h3>
-            <input id="friendUid" placeholder="Paste Friend UID">
-            <button id="confirmFriendBtn" class="btn-main">Add</button>
-            <button class="close-modal" onclick="closeModal('friendModal')">Cancel</button>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+        init();
+    </script>
 </body>
 </html>

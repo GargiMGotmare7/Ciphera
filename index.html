@@ -93,14 +93,13 @@
         .group-item:hover .delete-grp-btn { opacity: 1; }
         .delete-grp-btn:hover { background: var(--danger); color: white; }
 
-        /* MESSAGE ACTION BUTTONS */
+        /* MESSAGE ACTIONS */
         .msg-actions {
             position: absolute; top: 50%; left: -60px; transform: translateY(-50%); 
             display: flex; gap: 8px; opacity: 0; transition: 0.2s;
         }
         .sent .msg-actions { left: -65px; flex-direction: row; }
         .received .msg-actions { right: -65px; left: auto; flex-direction: row-reverse; }
-
         .message:hover .msg-actions { opacity: 1; }
         
         .action-btn {
@@ -111,7 +110,7 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI - REFINED WHATSAPP BUBBLE STYLE */
+        /* REPLY BUBBLE STYLE */
         .reply-wrapper {
             position: relative;
             margin-bottom: 10px;
@@ -121,39 +120,22 @@
         }
 
         .reply-bar-accent {
-            width: 4px;
-            height: 100%;
-            border-radius: 4px;
-            flex-shrink: 0;
-            background: var(--accent);
-            margin-right: 8px; /* WhatsApp standard indentation */
+            width: 4px; height: 100%; border-radius: 4px;
+            flex-shrink: 0; background: var(--accent); margin-right: 8px;
         }
 
-        .received .reply-bar-accent { background: var(--secondary); } /* Recipient bar secondary color */
+        .received .reply-bar-accent { background: var(--secondary); }
 
         .reply-preview-text {
-            background: transparent; /* Seamless blending */
-            padding: 4px 0; /* Align with top of bar */
-            border-radius: 8px;
-            font-size: 11px;
-            opacity: 0.9;
-            max-width: 100%;
-            min-width: 120px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: var(--accent); /* Default bar color matches default text color */
+            background: transparent; padding: 4px 0; border-radius: 8px;
+            font-size: 11px; opacity: 0.9; max-width: 100%; min-width: 120px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent);
         }
-        
         .received .reply-preview-text { color: var(--secondary); }
 
         #replyBar {
-            display: none;
-            padding: 12px 25px;
-            background: rgba(56, 189, 248, 0.05);
-            border-top: 1px solid var(--glass-border);
-            justify-content: space-between;
-            align-items: center;
+            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.05);
+            border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
         }
 
         /* --- CHAT AREA --- */
@@ -163,52 +145,26 @@
             backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border);
             display: flex; justify-content: space-between; align-items: center;
         }
-
         .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
         .message { 
-            position: relative;
-            padding: 12px 18px; border-radius: 20px; margin: 8px 0; 
-            max-width: 70%; font-size: 0.95rem; line-height: 1.4;
-            word-wrap: break-word;
+            position: relative; padding: 12px 18px; border-radius: 20px; margin: 8px 0; 
+            max-width: 70%; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word;
         }
-        .sent { 
-            background: linear-gradient(135deg, var(--accent), #6366f1); 
-            margin-left: auto; color: white; border-bottom-right-radius: 4px; 
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
-        }
-        .received { 
-            background: #1e293b; margin-right: auto; color: #e2e8f0; 
-            border-bottom-left-radius: 4px; 
-        }
+        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); }
+        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
 
-        /* --- CONTROLS --- */
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
 
-        .btn-circle { 
-            background: linear-gradient(135deg, var(--accent), var(--secondary)); 
-            border: none; width: 50px; height: 50px; border-radius: 50%; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
+        .btn-circle { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .btn-circle:hover { transform: scale(1.1) rotate(5deg); }
 
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
 
-        .unlock-pill {
-            background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary);
-            color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;
-        }
-
-        #placeholderUI {
-            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px);
-        }
+        .unlock-pill { background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        #placeholderUI { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px); }
     </style>
 </head>
 <body>
@@ -225,6 +181,9 @@
     <div style="display: flex; gap: 10px; margin-top: 10px;">
         <button onclick="login()" style="flex: 1; background: var(--accent); color: var(--bg); padding: 14px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer;">Login</button>
         <button onclick="signup()" style="flex: 1; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer;">Sign Up</button>
+    </div>
+    <div style="margin-top: 15px;">
+        <button onclick="forgotPassword()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; opacity:0.7;">Forgot Password?</button>
     </div>
 </div>
 
@@ -311,23 +270,19 @@
         messagingSenderId: "562339080162", 
         appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
     };
-    firebase.initializeApp(firebaseConfigConfig);
+    firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); 
     const db = firebase.firestore();
 
-    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null;
-    let replyingTo = null;
+    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null;
 
     auth.onAuthStateChanged(u => { 
         if(u){ 
-            userId = u.uid; 
-            document.getElementById("myUidDisplay").innerText = userId;
-            document.getElementById("authBox").style.display="none"; 
-            document.getElementById("app").style.display="flex"; 
+            userId = u.uid; document.getElementById("myUidDisplay").innerText = userId;
+            document.getElementById("authBox").style.display="none"; document.getElementById("app").style.display="flex"; 
             loadGroups();
         } else { 
-            document.getElementById("authBox").style.display="block"; 
-            document.getElementById("app").style.display="none"; 
+            document.getElementById("authBox").style.display="block"; document.getElementById("app").style.display="none"; 
         } 
     });
 
@@ -338,6 +293,11 @@
 
     function login() { auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
     function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).then(() => alert("Welcome!")).catch(e => alert(e.message)); }
+    function forgotPassword() {
+        const email = document.getElementById("email").value;
+        if(!email) return alert("Please enter your email first!");
+        auth.sendPasswordResetEmail(email).then(() => alert("Reset link sent!")).catch(e => alert(e.message));
+    }
     function logout() { if(confirm("Logout?")) auth.signOut().then(() => location.reload()); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -347,24 +307,19 @@
         if(!name) return;
         try {
             const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
-            document.getElementById("newGroupName").value = "";
-            closeModal('groupModal');
+            document.getElementById("newGroupName").value = ""; closeModal('groupModal');
             switchGroup(g.id, name);
         } catch(e) { alert("Permission Error"); }
     }
 
     function loadGroups() {
         db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
-            const list = document.getElementById("groupList");
-            list.innerHTML = "";
+            const list = document.getElementById("groupList"); list.innerHTML = "";
             sn.forEach(doc => {
                 const data = doc.data();
                 const div = document.createElement("div");
                 div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-                div.innerHTML = `
-                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div>
-                    <div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div>
-                    <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
+                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div><div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div><button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
@@ -374,40 +329,24 @@
     async function deleteGroup(event, gId) {
         event.stopPropagation();
         if (confirm("Delete this Chat?")) {
-            try {
-                await db.collection("groups").doc(gId).delete();
-                if (roomId === gId) {
-                    roomId = null;
-                    document.getElementById("placeholderUI").style.display = "flex";
-                    document.getElementById("chatInterface").style.display = "none";
-                }
-            } catch (e) { alert(e.message); }
+            try { await db.collection("groups").doc(gId).delete(); if (roomId === gId) { roomId = null; document.getElementById("placeholderUI").style.display = "flex"; document.getElementById("chatInterface").style.display = "none"; } } catch (e) { alert(e.message); }
         }
     }
 
     function switchGroup(id, name) {
         document.getElementById("placeholderUI").style.display = "none";
         document.getElementById("chatInterface").style.display = "flex";
-        roomId = id;
-        isDecoded = false; 
-        roomKey = null;
-        cancelReply();
+        roomId = id; isDecoded = false; roomKey = null; cancelReply();
         document.getElementById("activeGroupName").innerText = name;
         document.getElementById("roomDisplay").innerText = id;
         document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
-        loadGroups();
-        listenMessages();
+        loadGroups(); listenMessages();
     }
 
     async function addFriend() {
         const fUid = document.getElementById("friendUid").value;
         if(!fUid || !roomId) return;
-        try {
-            await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) });
-            document.getElementById("friendUid").value = "";
-            closeModal('friendModal');
-            alert("Added!");
-        } catch(e) { alert(e.message); }
+        try { await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) }); document.getElementById("friendUid").value = ""; closeModal('friendModal'); alert("Added!"); } catch(e) { alert(e.message); }
     }
 
     function toggleSecretInput() { 
@@ -418,52 +357,30 @@
 
     function applyKey() { 
         const key = document.getElementById("masterKey").value; 
-        if(key) { 
-            roomKey = key; isDecoded = true; 
-            document.getElementById("lockerRoom").style.display = "none"; 
-            document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCKED";
-            document.getElementById("masterKey").value = "";
-            renderAllMessages(); 
-        } 
+        if(key) { roomKey = key; isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCKED"; document.getElementById("masterKey").value = ""; renderAllMessages(); } 
     }
 
     function setReply(id, encryptedText) {
         if(!isDecoded) return;
         let plainText = "";
-        try {
-            const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey);
-            plainText = bytes.toString(CryptoJS.enc.Utf8);
-        } catch(e) { plainText = "Encrypted Message"; }
-        
+        try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = "Encrypted Message"; }
         replyingTo = { id, text: encryptedText, plain: plainText };
         document.getElementById("replyBar").style.display = "flex";
         document.getElementById("replyPreviewText").innerText = plainText;
         document.getElementById("inputText").focus();
     }
 
-    function cancelReply() {
-        replyingTo = null;
-        document.getElementById("replyBar").style.display = "none";
-    }
+    function cancelReply() { replyingTo = null; document.getElementById("replyBar").style.display = "none"; }
 
     function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); 
-        chatBox.innerHTML = "";
+        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
         allMessages.forEach(m => {
-            let d = document.createElement("div"); 
-            d.className = "message " + (m.sender === userId ? "sent" : "received");
-            
+            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             let content;
             if(isDecoded) {
-                try {
-                    const bytes = CryptoJS.AES.decrypt(m.text, roomKey);
-                    content = bytes.toString(CryptoJS.enc.Utf8) || "⚠️ Invalid Key";
-                } catch (e) { content = "⚠️ Error"; }
-            } else {
-                content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`;
-            }
+                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "⚠️ Invalid Key"; } catch (e) { content = "⚠️ Error"; }
+            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
-            // HTML Structure change to support the accent bar and seamless blending
             let replyHtml = "";
             if (m.replyTo && isDecoded) {
                 const originalMsg = allMessages.find(msg => msg.id === m.replyTo.id);
@@ -471,36 +388,14 @@
                     try {
                         const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
                         const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                        replyHtml = `
-                            <div class="reply-wrapper">
-                                <div class="reply-bar-accent"></div>
-                                <div class="reply-preview-text">${rText}</div>
-                            </div>`;
-                    } catch(e) { replyHtml = `
-                            <div class="reply-wrapper">
-                                <div class="reply-bar-accent"></div>
-                                <div class="reply-preview-text">Encrypted</div>
-                            </div>`; }
+                        replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">${rText}</div></div>`;
+                    } catch(e) { replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">Encrypted</div></div>`; }
                 } else {
-                    replyHtml = `
-                            <div class="reply-wrapper" style="opacity:0.6;">
-                                <div class="reply-bar-accent" style="opacity:0.4;"></div>
-                                <div class="reply-preview-text" style="font-style:italic;">Original message deleted</div>
-                            </div>`;
+                    replyHtml = `<div class="reply-wrapper" style="opacity:0.6;"><div class="reply-bar-accent" style="opacity:0.4;"></div><div class="reply-preview-text" style="font-style:italic;">Original message deleted</div></div>`;
                 }
             }
 
-            let actionButtons = "";
-            if(isDecoded) {
-                actionButtons = `
-                    <div class="msg-actions">
-                        <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg>
-                        </button>
-                        ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
-                    </div>`;
-            }
-
+            let actionButtons = isDecoded ? `<div class="msg-actions"><button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg></button>${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}</div>` : "";
             d.innerHTML = `${replyHtml}<div>${content}</div>${actionButtons}`;
             chatBox.appendChild(d);
         });
@@ -508,34 +403,18 @@
     }
 
     async function deleteMessage(msgId) {
-        if (!isDecoded) return;
-        if (confirm("Delete this message?")) {
-            try {
-                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();
-            } catch (e) { alert(e.message); }
-        }
+        if (!isDecoded || !confirm("Delete this message?")) return;
+        try { await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete(); } catch (e) { alert(e.message); }
     }
 
     function sendMessage() {
         if(!roomId || !isDecoded) return;
-        let input = document.getElementById("inputText");
-        let txt = input.value.trim();
+        let input = document.getElementById("inputText"), txt = input.value.trim();
         if(!txt) return;
-
-        const msgData = { 
-            text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
-            sender: userId, 
-            time: Date.now() 
-        };
-
-        if(replyingTo) {
-            msgData.replyTo = { id: replyingTo.id, text: replyingTo.text };
-            cancelReply();
-        }
-
+        const msgData = { text: CryptoJS.AES.encrypt(txt, roomKey).toString(), sender: userId, time: Date.now() };
+        if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
         db.collection("groups").doc(roomId).collection("messages").add(msgData);
-        input.value = "";
-        input.style.height = '50px';
+        input.value = ""; input.style.height = '50px';
     }
 
     function listenMessages() {

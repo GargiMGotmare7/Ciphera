@@ -255,6 +255,28 @@
     </div>
 </div>
 
+<div id="groupModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--accent);">New Secret Chat</h3>
+        <input id="newGroupName" placeholder="Group Name...">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="createGroup()" style="flex:1; background:var(--accent); border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">Create</button>
+            <button onclick="closeModal('groupModal')" style="flex:1; background:transparent; color:white; border:1px solid var(--glass-border); padding:12px; border-radius:12px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="friendModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--secondary);">Invite Agent</h3>
+        <input id="friendUid" placeholder="User UID...">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="addFriend()" style="flex:1; background:var(--secondary); border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">Add</button>
+            <button onclick="closeModal('friendModal')" style="flex:1; background:transparent; color:white; border:1px solid var(--glass-border); padding:12px; border-radius:12px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- FIREBASE INIT FIXED ---
     const firebaseConfig = { 

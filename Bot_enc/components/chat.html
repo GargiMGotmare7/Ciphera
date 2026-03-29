@@ -6,13 +6,12 @@
 
     <div id="chatInterface" style="display:none; flex-direction: column; height: 100%;">
         <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="statusDot" style="height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; transition: 0.3s;"></span>
-                
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="statusDot" style="width: 10px; height: 10px; background: #808080; border-radius: 50%; transition: 0.3s;"></div>
                 <div>
                     <b id="activeGroupName" style="font-size: 1.2rem;">Select Chat</b><br>
                     <small id="roomDisplay" style="opacity:0.4; font-size:9px"></small>
-                    <small id="statusText" style="opacity:0.6; font-size:9px; margin-left: 5px; text-transform: uppercase;">Offline</small>
+                    <small id="statusLabel" style="opacity:0.6; font-size:9px; margin-left: 4px;">Offline</small>
                 </div>
             </div>
             <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn">🔓 UNLOCK</button>
@@ -41,27 +40,55 @@
 <script>
     (function() {
         const dot = document.getElementById('statusDot');
-        const text = document.getElementById('statusText');
+        const text = document.getElementById('statusLabel');
 
-        function updateStatus(isOnline) {
+        // 1. Function to update the UI visuals
+        function updateUI(isOnline) {
             if (isOnline) {
-                dot.style.backgroundColor = "#2ecc71"; // Green
+                dot.style.backgroundColor = "#2ecc71"; 
                 dot.style.boxShadow = "0 0 8px #2ecc71";
                 text.innerText = "Online";
                 text.style.color = "#2ecc71";
             } else {
-                dot.style.backgroundColor = "#7f8c8d"; // Grey
+                dot.style.backgroundColor = "#7f8c8d"; 
                 dot.style.boxShadow = "none";
                 text.innerText = "Offline";
                 text.style.color = "rgba(255,255,255,0.4)";
             }
         }
 
-        // Logic: Mark as online if the user is looking at the tab
-        window.addEventListener('focus', () => updateStatus(true));
-        window.addEventListener('blur', () => updateStatus(false));
+        // 2. Firebase Presence Logic
+        // This monitors the connection and updates YOUR status in the DB
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                const myStatusRef = firebase.database().ref('status/' + user.uid);
+                const connectedRef = firebase.database().ref('.info/connected');
 
-        // Initial check
-        updateStatus(document.hasFocus());
+                connectedRef.on('value', (snap) => {
+                    if (snap.val() === true) {
+                        // If I close the tab, set me to offline automatically
+                        myStatusRef.onDisconnect().set({ state: 'offline' });
+                        // Set me to online now
+                        myStatusRef.set({ state: 'online' });
+                    }
+                });
+            }
+        });
+
+        /** * 3. Monitoring the OTHER person 
+         * Replace 'TARGET_USER_ID' with the actual ID of the person you are chatting with.
+         * Usually, you would update this variable whenever you click a chat name.
+         */
+        function watchPartnerStatus(partnerId) {
+            firebase.database().ref('status/' + partnerId).on('value', (snapshot) => {
+                const data = snapshot.val();
+                const isOnline = data && data.state === 'online';
+                updateUI(isOnline);
+            });
+        }
+
+        // Example: If you have a variable for the room/partner, call it like:
+        // watchPartnerStatus('some-user-id');
+
     })();
 </script>

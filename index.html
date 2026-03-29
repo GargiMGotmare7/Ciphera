@@ -111,17 +111,49 @@
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
 
-        /* REPLY UI - UPDATED SIZE AND STYLE */
-        .reply-preview {
-            background: rgba(0,0,0,0.25); border-left: 4px solid var(--accent);
-            padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px;
-            opacity: 0.9; max-width: 100%; min-width: 120px; overflow: hidden; 
-            text-overflow: ellipsis; white-space: nowrap; color: var(--accent);
+        /* REPLY UI - REFINED WHATSAPP BUBBLE STYLE */
+        .reply-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
         }
 
+        .reply-bar-accent {
+            width: 4px;
+            height: 100%;
+            border-radius: 4px;
+            flex-shrink: 0;
+            background: var(--accent);
+            margin-right: 8px; /* WhatsApp standard indentation */
+        }
+
+        .received .reply-bar-accent { background: var(--secondary); } /* Recipient bar secondary color */
+
+        .reply-preview-text {
+            background: transparent; /* Seamless blending */
+            padding: 4px 0; /* Align with top of bar */
+            border-radius: 8px;
+            font-size: 11px;
+            opacity: 0.9;
+            max-width: 100%;
+            min-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--accent); /* Default bar color matches default text color */
+        }
+        
+        .received .reply-preview-text { color: var(--secondary); }
+
         #replyBar {
-            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.05);
-            border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
+            display: none;
+            padding: 12px 25px;
+            background: rgba(56, 189, 248, 0.05);
+            border-top: 1px solid var(--glass-border);
+            justify-content: space-between;
+            align-items: center;
         }
 
         /* --- CHAT AREA --- */
@@ -235,7 +267,10 @@
             <div class="chat-container" id="chatBox"></div>
 
             <div id="replyBar">
-                <div id="replyPreviewText" style="font-size: 12px; opacity: 0.8; border-left: 3px solid var(--accent); padding-left: 10px;"></div>
+                <div class="reply-wrapper" id="replyPreviewArea">
+                    <div class="reply-bar-accent"></div>
+                    <div class="reply-preview-text" id="replyPreviewText"></div>
+                </div>
                 <button onclick="cancelReply()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
             </div>
 
@@ -276,7 +311,7 @@
         messagingSenderId: "562339080162", 
         appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
     };
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfigConfig);
     const auth = firebase.auth(); 
     const db = firebase.firestore();
 
@@ -428,19 +463,30 @@
                 content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`;
             }
 
+            // HTML Structure change to support the accent bar and seamless blending
             let replyHtml = "";
             if (m.replyTo && isDecoded) {
-                // CHECK IF ORIGINAL MESSAGE STILL EXISTS
                 const originalMsg = allMessages.find(msg => msg.id === m.replyTo.id);
                 if (originalMsg) {
                     try {
                         const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
                         const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                        replyHtml = `<div class="reply-preview">${rText}</div>`;
-                    } catch(e) { replyHtml = `<div class="reply-preview">Encrypted</div>`; }
+                        replyHtml = `
+                            <div class="reply-wrapper">
+                                <div class="reply-bar-accent"></div>
+                                <div class="reply-preview-text">${rText}</div>
+                            </div>`;
+                    } catch(e) { replyHtml = `
+                            <div class="reply-wrapper">
+                                <div class="reply-bar-accent"></div>
+                                <div class="reply-preview-text">Encrypted</div>
+                            </div>`; }
                 } else {
-                    // MESSAGE WAS DELETED
-                    replyHtml = `<div class="reply-preview" style="font-style:italic; opacity:0.6;">Original message deleted</div>`;
+                    replyHtml = `
+                            <div class="reply-wrapper" style="opacity:0.6;">
+                                <div class="reply-bar-accent" style="opacity:0.4;"></div>
+                                <div class="reply-preview-text" style="font-style:italic;">Original message deleted</div>
+                            </div>`;
                 }
             }
 

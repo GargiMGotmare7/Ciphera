@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
 
     <style>
         :root {
@@ -181,6 +182,14 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
 
+        /* Emoji Picker Styling */
+        emoji-picker {
+            --background: #0f172a;
+            --border-color: var(--accent);
+            --outline-color: var(--accent);
+            width: 100%; height: 350px;
+        }
+
         .unlock-pill { background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
         #placeholderUI { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px); }
 
@@ -270,19 +279,12 @@
 </div>
 
 <div id="reactionModal" class="modal">
-    <div class="modal-content" style="width:auto; max-width: 300px; text-align:center;">
-        <h3 style="margin-top:0; color:var(--accent); font-size:14px;">React to Message</h3>
-        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; font-size:24px;">
-            <span style="cursor:pointer" onclick="addReaction('👍')">👍</span>
-            <span style="cursor:pointer" onclick="addReaction('❤️')">❤️</span>
-            <span style="cursor:pointer" onclick="addReaction('😂')">😂</span>
-            <span style="cursor:pointer" onclick="addReaction('😮')">😮</span>
-            <span style="cursor:pointer" onclick="addReaction('😢')">😢</span>
-            <span style="cursor:pointer" onclick="addReaction('🔥')">🔥</span>
-            <span style="cursor:pointer" onclick="addReaction('💯')">💯</span>
-            <span style="cursor:pointer" onclick="addReaction('✅')">✅</span>
+    <div class="modal-content" style="width:90%; max-width: 400px; padding: 10px;">
+        <h3 style="margin: 10px 0; color:var(--accent); font-size:14px; text-align: center;">React to Message</h3>
+        <emoji-picker id="fullEmojiPicker" class="dark"></emoji-picker>
+        <div style="text-align: center;">
+            <button onclick="closeModal('reactionModal')" style="margin-top:10px; background:transparent; border:1px solid var(--glass-border); color:white; padding:8px 20px; border-radius:10px; cursor:pointer;">Close</button>
         </div>
-        <button onclick="closeModal('reactionModal')" style="margin-top:15px; background:transparent; border:1px solid var(--glass-border); color:white; padding:8px 15px; border-radius:10px; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
@@ -336,6 +338,11 @@
 
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
+
+    // Initialize Emoji Picker Listener
+    document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
+        addReaction(event.detail.unicode);
+    });
 
     auth.onAuthStateChanged(u => { 
         if(u){ 

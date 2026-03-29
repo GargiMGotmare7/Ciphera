@@ -95,10 +95,10 @@
 
         /* MESSAGE ACTIONS */
         .msg-actions {
-            position: absolute; top: 50%; left: -60px; transform: translateY(-50%); 
-            display: flex; gap: 8px; opacity: 0; transition: 0.2s;
+            position: absolute; top: 50%; left: -90px; transform: translateY(-50%); 
+            display: flex; gap: 5px; opacity: 0; transition: 0.2s;
         }
-        .sent .msg-actions { left: -65px; flex-direction: row; }
+        .sent .msg-actions { left: -90px; flex-direction: row; }
         .received .msg-actions { right: -65px; left: auto; flex-direction: row-reverse; }
         .message:hover .msg-actions { opacity: 1; }
         
@@ -109,6 +109,7 @@
         }
         .del-btn:hover { background: var(--danger); }
         .rep-btn:hover { background: var(--accent); }
+        .edit-btn:hover { background: var(--secondary); }
 
         /* --- FIXED VISIBLE REPLY BUBBLE STYLE --- */
         .reply-wrapper {
@@ -116,32 +117,19 @@
             margin-bottom: 8px;
             overflow: hidden;
             display: flex;
-            align-items: stretch; /* Ensures bar matches height of text box */
-            background: rgba(0, 0, 0, 0.2); /* Darker inner tint for contrast */
+            align-items: stretch; 
+            background: rgba(0, 0, 0, 0.2); 
             border-radius: 8px;
         }
 
-        .reply-bar-accent {
-            width: 4px; 
-            flex-shrink: 0; 
-            background: var(--accent); 
-        }
-
+        .reply-bar-accent { width: 4px; flex-shrink: 0; background: var(--accent); }
         .received .reply-bar-accent { background: var(--secondary); }
 
         .reply-preview-text {
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #ffffff; /* FORCE BRIGHT WHITE FOR READABILITY */
-            max-width: 100%;
-            min-width: 140px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            padding: 8px 12px; font-size: 12px; font-weight: 500; color: #ffffff; 
+            max-width: 100%; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         
-        /* Highlight labels/colors for different message types */
         .sent .reply-preview-text { color: #e0f2fe; }
         .received .reply-preview-text { color: #f3e8ff; }
 
@@ -165,6 +153,8 @@
         }
         .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); }
         .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+
+        .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
@@ -247,8 +237,8 @@
 
             <div class="input-area">
                 <textarea id="inputText" placeholder="Type something secret..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-                <button class="btn-circle" onclick="sendMessage()">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
+                <button class="btn-circle" id="sendBtn" onclick="handleSendAction()">
+                    <span id="sendIcon"><svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg></span>
                 </button>
             </div>
         </div>
@@ -278,7 +268,6 @@
 </div>
 
 <script>
-    // --- FIREBASE INIT FIXED ---
     const firebaseConfig = { 
         apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
         authDomain: "ciphera-1.firebaseapp.com", 
@@ -291,7 +280,7 @@
     const auth = firebase.auth(); 
     const db = firebase.firestore();
 
-    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null;
+    let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null;
 
     auth.onAuthStateChanged(u => { 
         if(u){ 
@@ -353,7 +342,7 @@
     function switchGroup(id, name) {
         document.getElementById("placeholderUI").style.display = "none";
         document.getElementById("chatInterface").style.display = "flex";
-        roomId = id; isDecoded = false; roomKey = null; cancelReply();
+        roomId = id; isDecoded = false; roomKey = null; cancelReply(); cancelEdit();
         document.getElementById("activeGroupName").innerText = name;
         document.getElementById("roomDisplay").innerText = id;
         document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
@@ -379,6 +368,7 @@
 
     function setReply(id, encryptedText) {
         if(!isDecoded) return;
+        cancelEdit();
         let plainText = "";
         try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = "Encrypted Message"; }
         replyingTo = { id, text: encryptedText, plain: plainText };
@@ -388,6 +378,23 @@
     }
 
     function cancelReply() { replyingTo = null; document.getElementById("replyBar").style.display = "none"; }
+
+    function setEdit(id, encryptedText) {
+        if(!isDecoded) return;
+        cancelReply();
+        let plainText = "";
+        try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = ""; }
+        editingMsgId = id;
+        document.getElementById("inputText").value = plainText;
+        document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg>';
+        document.getElementById("inputText").focus();
+    }
+
+    function cancelEdit() {
+        editingMsgId = null;
+        document.getElementById("inputText").value = "";
+        document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>';
+    }
 
     function renderAllMessages() {
         const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
@@ -412,8 +419,14 @@
                 }
             }
 
-            let actionButtons = isDecoded ? `<div class="msg-actions"><button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg></button>${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}</div>` : "";
-            d.innerHTML = `${replyHtml}<div>${content}</div>${actionButtons}`;
+            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
+            let actionButtons = isDecoded ? `<div class="msg-actions">
+                <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg></button>
+                ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/></svg></button>` : ''}
+                ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+            </div>` : "";
+            
+            d.innerHTML = `${replyHtml}<div>${content}${editedTag}</div>${actionButtons}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -424,14 +437,33 @@
         try { await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete(); } catch (e) { alert(e.message); }
     }
 
-    function sendMessage() {
+    async function handleSendAction() {
         if(!roomId || !isDecoded) return;
         let input = document.getElementById("inputText"), txt = input.value.trim();
         if(!txt) return;
-        const msgData = { text: CryptoJS.AES.encrypt(txt, roomKey).toString(), sender: userId, time: Date.now() };
-        if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
-        db.collection("groups").doc(roomId).collection("messages").add(msgData);
-        input.value = ""; input.style.height = '50px';
+
+        if(editingMsgId) {
+            // EDITING EXISTING MESSAGE
+            try {
+                const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
+                await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({
+                    text: encryptedText,
+                    edited: true
+                });
+                cancelEdit();
+            } catch(e) { alert("Failed to edit: " + e.message); }
+        } else {
+            // SENDING NEW MESSAGE
+            const msgData = { 
+                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
+                sender: userId, 
+                time: Date.now(),
+                edited: false 
+            };
+            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
+            db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            input.value = ""; input.style.height = '50px';
+        }
     }
 
     function listenMessages() {

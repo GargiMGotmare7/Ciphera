@@ -206,16 +206,17 @@
 
 <script>
     const firebaseConfig = { 
-        apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
-        authDomain: "ciphera-1.firebaseapp.com", 
-        projectId: "ciphera-1", 
-        storageBucket: "ciphera-1.firebasestorage.app", 
-        messagingSenderId: "562339080162", 
-        appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
-    };
+    apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
+    authDomain: "ciphera-1.firebaseapp.com", 
+    projectId: "ciphera-1", 
+    databaseURL: "https://ciphera-1-default-rtdb.firebaseio.com", 
+    storageBucket: "ciphera-1.firebasestorage.app", 
+    messagingSenderId: "562339080162", 
+    appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
+};
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); 
-    const db = firebase.firestore();
+    const db = firebase.database();
 
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };

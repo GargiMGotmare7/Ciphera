@@ -143,27 +143,9 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-/* High-Contrast Ticks */
-   /* --- NEW STATUS INDICATORS --- */
-.status-indicator { 
-    font-size: 14px; 
-    margin-left: 8px; 
-    font-weight: 900;
-}
-
-.status-read { 
-    color: #00f2ff !important; 
-    text-shadow: 0 0 10px #00f2ff; 
-}
-
-.status-delivered { 
-    color: #64748b !important; 
-}
-
-.status-sent { 
-    color: white !important; 
-    opacity: 0.2; 
-}
+        .status-ticks { font-size: 10px; margin-left: 8px; font-weight: bold; }
+        .seen-blue { color: #38bdf8; }
+        .delivered-grey { color: rgba(255,255,255,0.4); }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
@@ -433,118 +415,36 @@
     }
 
     /* --- FEATURE: SEEN STATUS --- */
-   async function updateMessageStatus(msgId, currentSeenBy) {
-    // Only update if we haven't 'seen' it yet and we aren't the sender
-    if (userId && !currentSeenBy.includes(userId)) {
-        try {
-            await db.collection("groups").doc(roomId)
-                .collection("messages").doc(msgId)
-                .update({
+    async function markAsSeen(msgId, currentSeenBy) {
+        if (!currentSeenBy.includes(userId)) {
+            try {
+                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
                     seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
                 });
-        } catch (e) {
-            console.log("Status update suppressed");
+            } catch (e) { console.log("Seen update error"); }
         }
     }
-}
 
     function renderAllMessages() {
-    const chatBox = document.getElementById("chatBox"); 
-    if (!chatBox) return;
-    chatBox.innerHTML = "";
-    
-    allMessages.forEach(m => {
-        let d = document.createElement("div"); 
-        d.className = "message " + (m.sender === userId ? "sent" : "received");
-        
-        // 1. Decrypt the text safely
-        let content = "";
-        if(isDecoded) {
-            try { 
-                const bytes = CryptoJS.AES.decrypt(m.text, roomKey); 
-                content = bytes.toString(CryptoJS.enc.Utf8);
-                if (!content) content = "<i>[Decryption Failed]</i>";
-            } catch (e) { 
-                content = "<span style='color:var(--danger)'>⚠️ Error</span>"; 
+        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+        allMessages.forEach(m => {
+            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+            
+            // Auto-mark as seen if chat is unlocked
+            if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
+
+            let content;
+            if(isDecoded) {
+                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
+            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
+
+            // Status Ticks Logic
+            let statusHtml = "";
+            if (m.sender === userId) {
+                const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
+                const tickClass = seenCount > 0 ? "seen-blue" : "delivered-grey";
+                statusHtml = `<span class="status-ticks ${tickClass}">✓✓</span>`;
             }
-        } else { 
-            content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; 
-        }
-
-        // 2. The New Status Indicators (Sent/Delivered/Read)
-        let statusHtml = "";
-        if (m.sender === userId) {
-            if (!m.id) {
-                statusHtml = `<span class="status-indicator status-sent" title="Sent">○</span>`;
-            } else {
-                const othersHaveSeen = (m.seenBy || []).some(id => id !== userId);
-                if (othersHaveSeen) {
-                    statusHtml = `<span class="status-indicator status-read" title="Read">⦿</span>`;
-                } else {
-                    statusHtml = `<span class="status-indicator status-delivered" title="Delivered">●</span>`;
-                }
-            }
-        }
-
-        // 3. Mark as Read (If we are receiving it)
-        if (m.sender !== userId && isDecoded && m.id) { 
-            updateMessageStatus(m.id, m.seenBy || []); 
-        }
-
-        // 4. Reply Logic
-        let replyHtml = "";
-        if (m.replyTo && isDecoded) {
-            try {
-                const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
-                const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">${rText}</div></div>`;
-            } catch(e) { replyHtml = ""; }
-        }
-
-        // 5. Reaction Logic
-        let reactionHtml = "";
-        if(m.reactions && isDecoded) {
-            reactionHtml = `<div class="reactions-container">`;
-            for(let emoji in m.reactions) {
-                let count = m.reactions[emoji].length;
-                let active = m.reactions[emoji].includes(userId) ? 'active' : '';
-                if(count > 0) reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
-            }
-            reactionHtml += `</div>`;
-        }
-
-        // 6. Assemble everything
-        let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
-        let actionButtons = isDecoded ? `<div class="msg-actions">
-            <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
-            <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
-            ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
-            ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
-        </div>` : "";
-        
-        let senderName = m.senderName || "Unknown";
-        
-        d.innerHTML = `
-            <span class="msg-sender-name">${senderName}</span>
-            ${replyHtml}
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
-                <div style="word-break: break-word;">${content}${editedTag}</div>
-                ${statusHtml}
-            </div>
-            ${reactionHtml}
-            ${actionButtons}
-        `;
-        
-        chatBox.appendChild(d);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-}
-
-// Trigger "Read" update for received messages if chat is unlocked
-if (m.sender !== userId && isDecoded && m.id) {
-    updateMessageStatus(m.id, m.seenBy || []);
-}
 
             let replyHtml = "";
             if (m.replyTo && isDecoded) {
@@ -578,59 +478,32 @@ if (m.sender !== userId && isDecoded && m.id) {
             </div>` : "";
             
             let senderName = m.senderName || "Unknown";
-            d.innerHTML = `
-    <span class="msg-sender-name">${senderName}</span>
-    ${replyHtml}
-    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-        <div>${content}${editedTag}</div>
-        ${statusHtml} 
-    </div>
-    ${reactionHtml}
-    ${actionButtons}
-`;
+            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
+            chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-     async function handleSendAction() {
-    if(!roomId || !isDecoded) return;
-    let input = document.getElementById("inputText"), txt = input.value.trim();
-    if(!txt) return;
+    async function handleSendAction() {
+        if(!roomId || !isDecoded) return;
+        let input = document.getElementById("inputText"), txt = input.value.trim();
+        if(!txt) return;
 
-    try {
-        const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
-        
         if(editingMsgId) {
-            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ 
-                text: encryptedText, 
-                edited: true 
-            });
+            const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
+            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ text: encryptedText, edited: true });
             cancelEdit();
         } else {
             const msgData = { 
-                text: encryptedText, 
-                sender: userId, 
-                senderName: currentUserProfile.username || "Agent", 
-                time: Date.now(), 
-                edited: false, 
-                reactions: {}, 
-                seenBy: [userId] // Initialize with sender
+                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
+                sender: userId, senderName: currentUserProfile.username, 
+                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
             };
-            
-            if(replyingTo) { 
-                msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; 
-                cancelReply(); 
-            }
-            
-            await db.collection("groups").doc(roomId).collection("messages").add(msgData);
-            input.value = ""; 
-            input.style.height = '50px';
+            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
+            db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            input.value = ""; input.style.height = '50px';
         }
-    } catch (e) {
-        console.error("Send Error:", e);
-        alert("Failed to send secret message.");
     }
-}
 
     function setReply(id, encryptedText) {
         if(!isDecoded) return;

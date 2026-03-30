@@ -144,8 +144,22 @@
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
         .status-ticks { font-size: 10px; margin-left: 8px; font-weight: bold; }
-        .seen-blue { color: #38bdf8; }
-        .delivered-grey { color: rgba(255,255,255,0.4); }
+/* High-Contrast Ticks */
+.status-ticks { 
+    font-size: 12px; 
+    margin-left: 8px; 
+    font-weight: 900; 
+    letter-spacing: -1px; /* Makes them look like WhatsApp ticks */
+}
+
+.seen-blue { 
+    color: #00f2ff !important; /* Cyber Cyan */
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); 
+}
+
+.delivered-grey { 
+    color: #64748b !important; /* Slate grey - much more visible than the old one */
+}
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }

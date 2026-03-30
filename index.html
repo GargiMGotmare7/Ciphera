@@ -454,7 +454,9 @@
             let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             
             // Auto-mark as seen if chat is unlocked
-            if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
+if (m.sender !== userId && isDecoded && m.id) { 
+    updateMessageStatus(m.id, m.seenBy || []); 
+}
 
             let content;
             if(isDecoded) {
@@ -531,26 +533,45 @@ if (m.sender !== userId && isDecoded && m.id) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    async function handleSendAction() {
-        if(!roomId || !isDecoded) return;
-        let input = document.getElementById("inputText"), txt = input.value.trim();
-        if(!txt) return;
+     async function handleSendAction() {
+    if(!roomId || !isDecoded) return;
+    let input = document.getElementById("inputText"), txt = input.value.trim();
+    if(!txt) return;
 
+    try {
+        const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
+        
         if(editingMsgId) {
-            const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
-            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ text: encryptedText, edited: true });
+            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ 
+                text: encryptedText, 
+                edited: true 
+            });
             cancelEdit();
         } else {
             const msgData = { 
-                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
-                sender: userId, senderName: currentUserProfile.username, 
-                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
+                text: encryptedText, 
+                sender: userId, 
+                senderName: currentUserProfile.username || "Agent", 
+                time: Date.now(), 
+                edited: false, 
+                reactions: {}, 
+                seenBy: [userId] // Initialize with sender
             };
-            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
-            db.collection("groups").doc(roomId).collection("messages").add(msgData);
-            input.value = ""; input.style.height = '50px';
+            
+            if(replyingTo) { 
+                msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; 
+                cancelReply(); 
+            }
+            
+            await db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            input.value = ""; 
+            input.style.height = '50px';
         }
+    } catch (e) {
+        console.error("Send Error:", e);
+        alert("Failed to send secret message.");
     }
+}
 
     function setReply(id, encryptedText) {
         if(!isDecoded) return;

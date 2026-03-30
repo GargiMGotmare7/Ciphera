@@ -127,11 +127,15 @@
 
         /* CHANGE 1: Centering for the larger Send Icon */
         /* Premium Send Button & Sleeker Arrow */
-.btn-circle { 
-    background: linear-gradient(135deg, var(--accent), var(--secondary)); 
-    border: none; width: 52px; height: 52px; border-radius: 50%; 
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+.btn-circle {
+
+    position: relative;
+    overflow: hidden; 
+    background-image: none !important; 
+}
+.btn-circle::before, .btn-circle::after {
+    display: none !important;
+    content: none !important;
 }
 .btn-circle:active { transform: scale(0.9); }
 
@@ -206,22 +210,13 @@
                 <button onclick="cancelReply()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:18px;">✕</button>
             </div>
 
-            <div class="input-area">
-                <textarea id="inputText" placeholder="Type something secret..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-                <button class="btn-circle" id="sendBtn" onclick="handleSendAction()">
+           <button class="btn-circle" id="sendBtn" onclick="handleSendAction()">
     <span id="sendIcon">
         <svg class="send-arrow" viewBox="0 0 24 24">
             <path d="M3.4,20.2,21,12,3.4,3.8a1,1,0,0,0-1.4,1.3L5.4,12l-3.4,6.9A1,1,0,0,0,3.4,20.2Z"/>
         </svg>
     </span>
 </button>
-                    <span id="sendIcon">
-                        <svg viewBox="0 0 24 24" width="34" height="34" fill="white">
-                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path>
-                        </svg>
-                    </span>
-                </button>
-            </div>
         </div>
     </div>
 </div>

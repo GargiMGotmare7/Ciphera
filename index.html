@@ -449,37 +449,96 @@
 }
 
     function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
-        allMessages.forEach(m => {
-            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
-            
-            // Auto-mark as seen if chat is unlocked
-if (m.sender !== userId && isDecoded && m.id) { 
-    updateMessageStatus(m.id, m.seenBy || []); 
-}
-
-            let content;
-            if(isDecoded) {
-                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
-            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
-
-            // Status Ticks Logic
-// --- NEW RENDER LOGIC ---
-let statusHtml = "";
-if (m.sender === userId) {
-    // 1. Sent (○) - If message has no ID yet (local state)
-    if (!m.id) {
-        statusHtml = `<span class="status-indicator status-sent" title="Sent">○</span>`;
-    } else {
-        // 2. Read (⦿) - If someone else's UID is in seenBy
-        const othersHaveSeen = (m.seenBy || []).some(id => id !== userId);
-        if (othersHaveSeen) {
-            statusHtml = `<span class="status-indicator status-read" title="Read">⦿</span>`;
-        } else {
-            // 3. Delivered (●) - In Firestore but not read by others
-            statusHtml = `<span class="status-indicator status-delivered" title="Delivered">●</span>`;
+    const chatBox = document.getElementById("chatBox"); 
+    if (!chatBox) return;
+    chatBox.innerHTML = "";
+    
+    allMessages.forEach(m => {
+        let d = document.createElement("div"); 
+        d.className = "message " + (m.sender === userId ? "sent" : "received");
+        
+        // 1. Decrypt the text safely
+        let content = "";
+        if(isDecoded) {
+            try { 
+                const bytes = CryptoJS.AES.decrypt(m.text, roomKey); 
+                content = bytes.toString(CryptoJS.enc.Utf8);
+                if (!content) content = "<i>[Decryption Failed]</i>";
+            } catch (e) { 
+                content = "<span style='color:var(--danger)'>⚠️ Error</span>"; 
+            }
+        } else { 
+            content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; 
         }
-    }
+
+        // 2. The New Status Indicators (Sent/Delivered/Read)
+        let statusHtml = "";
+        if (m.sender === userId) {
+            if (!m.id) {
+                statusHtml = `<span class="status-indicator status-sent" title="Sent">○</span>`;
+            } else {
+                const othersHaveSeen = (m.seenBy || []).some(id => id !== userId);
+                if (othersHaveSeen) {
+                    statusHtml = `<span class="status-indicator status-read" title="Read">⦿</span>`;
+                } else {
+                    statusHtml = `<span class="status-indicator status-delivered" title="Delivered">●</span>`;
+                }
+            }
+        }
+
+        // 3. Mark as Read (If we are receiving it)
+        if (m.sender !== userId && isDecoded && m.id) { 
+            updateMessageStatus(m.id, m.seenBy || []); 
+        }
+
+        // 4. Reply Logic
+        let replyHtml = "";
+        if (m.replyTo && isDecoded) {
+            try {
+                const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
+                const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
+                replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">${rText}</div></div>`;
+            } catch(e) { replyHtml = ""; }
+        }
+
+        // 5. Reaction Logic
+        let reactionHtml = "";
+        if(m.reactions && isDecoded) {
+            reactionHtml = `<div class="reactions-container">`;
+            for(let emoji in m.reactions) {
+                let count = m.reactions[emoji].length;
+                let active = m.reactions[emoji].includes(userId) ? 'active' : '';
+                if(count > 0) reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
+            }
+            reactionHtml += `</div>`;
+        }
+
+        // 6. Assemble everything
+        let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
+        let actionButtons = isDecoded ? `<div class="msg-actions">
+            <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
+            <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
+            ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
+            ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+        </div>` : "";
+        
+        let senderName = m.senderName || "Unknown";
+        
+        d.innerHTML = `
+            <span class="msg-sender-name">${senderName}</span>
+            ${replyHtml}
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
+                <div style="word-break: break-word;">${content}${editedTag}</div>
+                ${statusHtml}
+            </div>
+            ${reactionHtml}
+            ${actionButtons}
+        `;
+        
+        chatBox.appendChild(d);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 }
 
 // Trigger "Read" update for received messages if chat is unlocked

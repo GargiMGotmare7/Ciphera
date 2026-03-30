@@ -115,11 +115,10 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        /* NEW STEALTH STATUS STYLES */
-        .status-dot { font-size: 14px; margin-left: 8px; vertical-align: middle; cursor: default; }
-        .seen-glow { color: var(--accent); text-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
-        .sent-dim { color: rgba(255, 255, 255, 0.2); }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        /* UPDATED CORNER STATUS STYLES */
+        .status-container { font-size: 11px; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; font-weight: bold; }
+        .status-seen { color: #00f2ff; text-shadow: 0 0 5px #00f2ff; }
+        .status-sent { color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
@@ -340,14 +339,14 @@
                 try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
             } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
-            // UPDATED STEALTH STATUS LOGIC
+            // UPDATED BOTTOM CORNER LOGIC
             let statusHtml = "";
             if (m.sender === userId) {
                 const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
                 if (seenCount > 0) {
-                    statusHtml = `<span class="status-dot seen-glow" title="Decoded by Agent">●</span>`;
+                    statusHtml = `<div class="status-container status-seen">V</div>`;
                 } else {
-                    statusHtml = `<span class="status-dot sent-dim" title="Sent to Portal">○</span>`;
+                    statusHtml = `<div class="status-container status-sent">--</div>`;
                 }
             }
 
@@ -380,7 +379,8 @@
             </div>` : "";
             
             let senderName = m.senderName || "Unknown";
-            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
+            // Layout adjusted to column to force status to bottom right
+            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; flex-direction:column;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;

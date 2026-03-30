@@ -206,17 +206,16 @@
 
 <script>
     const firebaseConfig = { 
-    apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
-    authDomain: "ciphera-1.firebaseapp.com", 
-    projectId: "ciphera-1", 
-    databaseURL: "https://ciphera-1-default-rtdb.firebaseio.com", 
-    storageBucket: "ciphera-1.firebasestorage.app", 
-    messagingSenderId: "562339080162", 
-    appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
-};
+        apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
+        authDomain: "ciphera-1.firebaseapp.com", 
+        projectId: "ciphera-1", 
+        storageBucket: "ciphera-1.firebasestorage.app", 
+        messagingSenderId: "562339080162", 
+        appId: "1:562339080162:web:027e5fa3066dea8131bbbb" 
+    };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); 
-    const db = firebase.database();
+    const db = firebase.firestore();
 
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
@@ -261,52 +260,18 @@
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function createGroup() {
-    const groupName = document.getElementById('groupNameInput').value; // Make sure this ID matches your input
-    const user = firebase.auth().currentUser;
-
-    if (!groupName) return alert("Enter a name!");
-
-    // This sends the data to the Realtime Database 'groups' folder
-    const newGroupRef = db.ref('groups').push(); 
-    newGroupRef.set({
-        name: groupName,
-        createdBy: user.uid,
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    })
-    .then(() => {
-        alert("Group Created!");
-        closeModal(); // Replace with your function name to close the popup
-    })
-    .catch(error => {
-        console.error(error);
-        alert("Permission Error: " + error.message);
-    });
-}
+    async function createGroup() {
+        const name = document.getElementById("newGroupName").value;
+        if(!name) return;
+        try {
+            const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
+            document.getElementById("newGroupName").value = ""; closeModal('groupModal');
+            switchGroup(g.id, name);
+        } catch(e) { alert("Permission Error"); }
+    }
 
     function loadGroups() {
-        // PASTE THIS REALTIME DATABASE CODE:
-db.ref('groups').on('value', (snapshot) => {
-    const chatList = document.getElementById('chatList');
-    chatList.innerHTML = ""; // Clears the list so it doesn't double up
-
-    snapshot.forEach((childSnapshot) => {
-        const group = childSnapshot.val();
-        const groupId = childSnapshot.key;
-
-        // This creates the visual button for the group in your sidebar
-        const groupElement = document.createElement('div');
-        groupElement.className = "chat-item"; // Matches your CSS
-        groupElement.innerText = group.name;
-        
-        groupElement.onclick = () => {
-            // This is where we will load the messages for this group later
-            console.log("Switched to chat:", groupId);
-        };
-
-        chatList.appendChild(groupElement);
-    });
-});{
+        db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
             const list = document.getElementById("groupList"); list.innerHTML = "";
             sn.forEach(doc => {
                 const data = doc.data();
@@ -316,7 +281,7 @@ db.ref('groups').on('value', (snapshot) => {
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
-        };
+        });
     }
 
     async function deleteGroup(event, gId) {

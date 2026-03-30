@@ -115,9 +115,11 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        .status-ticks { font-size: 12px; margin-left: 8px; font-weight: 900; letter-spacing: -1px; }
-        .seen-blue { color: #00f2ff !important; text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); }
-        .delivered-grey { color: #64748b !important; }
+        /* NEW STEALTH STATUS STYLES */
+        .status-dot { font-size: 14px; margin-left: 8px; vertical-align: middle; cursor: default; }
+        .seen-glow { color: var(--accent); text-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+        .sent-dim { color: rgba(255, 255, 255, 0.2); }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
@@ -220,7 +222,6 @@
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
 
-    // Initialize Emoji Picker Listener
     document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
         addReaction(event.detail.unicode);
     });
@@ -267,10 +268,7 @@
             const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
             document.getElementById("newGroupName").value = ""; closeModal('groupModal');
             switchGroup(g.id, name);
-        } catch(e) { 
-    console.error("Technical details:", e);
-    alert("Database Error: " + e.message); 
-}
+        } catch(e) { alert("Permission Error"); }
     }
 
     function loadGroups() {
@@ -342,10 +340,15 @@
                 try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
             } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
+            // UPDATED STEALTH STATUS LOGIC
             let statusHtml = "";
             if (m.sender === userId) {
                 const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
-                statusHtml = seenCount > 0 ? `<span class="status-ticks seen-blue">✓✓</span>` : `<span class="status-ticks delivered-grey">✓✓</span>`;
+                if (seenCount > 0) {
+                    statusHtml = `<span class="status-dot seen-glow" title="Decoded by Agent">●</span>`;
+                } else {
+                    statusHtml = `<span class="status-dot sent-dim" title="Sent to Portal">○</span>`;
+                }
             }
 
             let replyHtml = "";

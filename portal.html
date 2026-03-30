@@ -115,10 +115,13 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        /* UPDATED CORNER STATUS STYLES */
-        .status-container { font-size: 11px; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; font-weight: bold; }
-        .status-seen { color: #00f2ff; text-shadow: 0 0 5px #00f2ff; }
-        .status-sent { color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; }
+        /* THREE-STAGE STATUS STYLES */
+        .status-container { font-size: 14px; margin-top: 2px; align-self: flex-end; display: flex; align-items: center; }
+        .status-not-sent { color: rgba(255, 255, 255, 0.4); } /* Hollow circle */
+        .status-sent { color: rgba(255, 255, 255, 0.5); } /* Gray dot */
+        .status-seen { color: var(--accent); text-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; } /* Blue glow */
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
@@ -339,14 +342,20 @@
                 try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
             } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
-            // UPDATED BOTTOM CORNER LOGIC
+            // 3-STAGE LOGIC FOR DOTS
             let statusHtml = "";
             if (m.sender === userId) {
                 const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
-                if (seenCount > 0) {
-                    statusHtml = `<div class="status-container status-seen">V</div>`;
+                
+                // If message metadata doesn't exist yet (hasPendingWrites), it's "not sent"
+                if (!m.id || m.metadata?.hasPendingWrites) {
+                    statusHtml = `<div class="status-container status-not-sent" title="Uploading...">○</div>`;
+                } else if (seenCount > 0) {
+                    // "Seen" - Blue Glowing Dot
+                    statusHtml = `<div class="status-container status-seen" title="Decoded by Agent">●</div>`;
                 } else {
-                    statusHtml = `<div class="status-container status-sent">--</div>`;
+                    // "Sent" - Gray Solid Dot
+                    statusHtml = `<div class="status-container status-sent" title="Sent to Portal">●</div>`;
                 }
             }
 
@@ -379,7 +388,7 @@
             </div>` : "";
             
             let senderName = m.senderName || "Unknown";
-            // Layout adjusted to column to force status to bottom right
+            // Layout pins status to bottom right
             d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; flex-direction:column;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
             chatBox.appendChild(d);
         });
@@ -452,8 +461,8 @@
 
     function listenMessages() {
         if(unsubscribeMessages) unsubscribeMessages();
-        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
-            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
+        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot({ includeMetadataChanges: true }, sn => {
+            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, metadata: doc.metadata, ...doc.data() })); renderAllMessages();
         });
     }
 </script>

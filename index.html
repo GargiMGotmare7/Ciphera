@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ciphera</title>
+    <title>Ciphera | Stealth Portal</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -35,7 +35,6 @@
             overflow: hidden;
         }
 
-        /* --- AUTHENTICATION BOX --- */
         #authBox {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: var(--card); backdrop-filter: blur(25px);
@@ -64,7 +63,6 @@
             background: none; border: none; cursor: pointer; color: var(--accent); opacity: 0.6;
         }
 
-        /* --- LAYOUT --- */
         #app { display: none; width: 100%; height: 100%; flex-direction: row; }
 
         .sidebar {
@@ -92,15 +90,13 @@
             font-size: 10px; opacity: 0; transition: opacity 0.2s;
         }
         .group-item:hover .delete-grp-btn { opacity: 1; }
-        .delete-grp-btn:hover { background: var(--danger); color: white; }
 
-        /* MESSAGE ACTIONS */
         .msg-actions {
-            position: absolute; top: 50%; left: -125px; transform: translateY(-50%); 
+            position: absolute; top: 50%; transform: translateY(-50%); 
             display: flex; gap: 5px; opacity: 0; transition: 0.2s; z-index: 5;
         }
-        .sent .msg-actions { left: -125px; flex-direction: row; }
-        .received .msg-actions { right: -125px; left: auto; flex-direction: row-reverse; }
+        .sent .msg-actions { left: -140px; flex-direction: row; }
+        .received .msg-actions { right: -140px; left: auto; flex-direction: row-reverse; }
         .message:hover .msg-actions { opacity: 1; }
         
         .action-btn {
@@ -108,15 +104,8 @@
             display: flex; align-items: center; justify-content: center; font-size: 12px; 
             color: white; background: rgba(255,255,255,0.1); backdrop-filter: blur(5px);
         }
-        .del-btn:hover { background: var(--danger); }
-        .rep-btn:hover { background: var(--accent); }
-        .edit-btn:hover { background: var(--secondary); }
-        .react-btn:hover { background: #10b981; }
 
-        /* REACTION PILLS */
-        .reactions-container {
-            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
-        }
+        .reactions-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
         .reaction-pill {
             background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
             padding: 2px 8px; border-radius: 10px; font-size: 12px; cursor: pointer;
@@ -124,34 +113,18 @@
         }
         .reaction-pill.active { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); }
 
-        /* --- FIXED VISIBLE REPLY BUBBLE STYLE --- */
         .reply-wrapper {
-            position: relative;
-            margin-bottom: 8px;
-            overflow: hidden;
-            display: flex;
-            align-items: stretch; 
-            background: rgba(0, 0, 0, 0.2); 
-            border-radius: 8px;
+            position: relative; margin-bottom: 8px; overflow: hidden; display: flex;
+            align-items: stretch; background: rgba(0, 0, 0, 0.2); border-radius: 8px;
         }
-
         .reply-bar-accent { width: 4px; flex-shrink: 0; background: var(--accent); }
-        .received .reply-bar-accent { background: var(--secondary); }
-
-        .reply-preview-text {
-            padding: 8px 12px; font-size: 12px; font-weight: 500; color: #ffffff; 
-            max-width: 100%; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        
-        .sent .reply-preview-text { color: #e0f2fe; }
-        .received .reply-preview-text { color: #f3e8ff; }
+        .reply-preview-text { padding: 8px 12px; font-size: 12px; font-weight: 500; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
         #replyBar {
             display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.1);
             border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
         }
 
-        /* --- CHAT AREA --- */
         .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
         .chat-header { 
             padding: 20px 30px; background: rgba(15, 23, 42, 0.3); 
@@ -164,41 +137,29 @@
             position: relative; padding: 12px 18px; border-radius: 20px; margin: 8px 0; 
             max-width: 75%; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word;
         }
-        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); }
+        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
         .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
 
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
-        .sent .msg-sender-name { text-align: right; color: #d1d5db; }
-        .received .msg-sender-name { color: var(--secondary); }
-
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
+
+        .status-ticks { font-size: 10px; margin-left: 8px; font-weight: bold; }
+        .seen-blue { color: #38bdf8; }
+        .delivered-grey { color: rgba(255,255,255,0.4); }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
 
-        .btn-circle { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .btn-circle:hover { transform: scale(1.1) rotate(5deg); }
+        .btn-circle { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
 
-        /* Emoji Picker Styling - REPAIRED */
-        emoji-picker {
-            --background: #0f172a;
-            --border-color: var(--accent);
-            --outline-color: var(--accent);
-            width: 100%; height: 350px;
-        }
-
-        /* Hides top nav and bottom recent sections as requested */
-        emoji-picker::part(nav),
-        emoji-picker::part(recent-section) {
-            display: none;
-        }
+        emoji-picker { width: 100%; height: 350px; --background: #0f172a; }
+        emoji-picker::part(nav), emoji-picker::part(recent-section) { display: none; }
 
         .unlock-pill { background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
         #placeholderUI { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px); }
-
         .profile-pic { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
     </style>
 </head>
@@ -226,7 +187,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="openModal('profileModal')">
-                <img id="myAvatar" src="https://ui-avatars.com/api/?name=User&length=2" class="profile-pic">
+                <img id="myAvatar" src="https://ui-avatars.com/api/?name=User" class="profile-pic">
                 <div>
                     <b id="myNameDisplay" style="display:block; font-size:14px;">User</b>
                     <small style="font-size:9px; color:var(--accent)">Edit Profile</small>
@@ -299,7 +260,6 @@
         <h3 style="margin-top:0; color:var(--accent);">User Profile</h3>
         <input id="profUsername" placeholder="Username">
         <input id="profPicUrl" placeholder="Profile Pic URL (Optional)">
-        <p style="font-size: 10px; opacity: 0.6; margin-top: 5px;">Changes will reflect on new messages.</p>
         <div style="display:flex; gap:10px; margin-top:10px;">
             <button onclick="saveProfile()" style="flex:1; background:var(--accent); border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">Save</button>
             <button onclick="closeModal('profileModal')" style="flex:1; background:transparent; color:white; border:1px solid var(--glass-border); padding:12px; border-radius:12px; cursor:pointer;">Cancel</button>
@@ -330,6 +290,7 @@
 </div>
 
 <script>
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = { 
         apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
         authDomain: "ciphera-1.firebaseapp.com", 
@@ -370,9 +331,7 @@
                 document.getElementById("profUsername").value = currentUserProfile.username;
                 document.getElementById("profPicUrl").value = currentUserProfile.photoURL || "";
                 document.getElementById("myAvatar").src = currentUserProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserProfile.username)}&length=2&background=random&color=fff`;
-            } else {
-                openModal('profileModal');
-            }
+            } else { openModal('profileModal'); }
         } catch(e) { console.error("Sync error:", e); }
     }
 
@@ -380,14 +339,9 @@
         const name = document.getElementById("profUsername").value.trim() || "User";
         const pic = document.getElementById("profPicUrl").value.trim();
         try {
-            await db.collection("users").doc(userId).set({ 
-                username: name, 
-                photoURL: pic 
-            }, { merge: true });
-            closeModal('profileModal');
-            syncProfile();
-            alert("Profile Saved!");
-        } catch(e) { alert("Error saving: " + e.message); }
+            await db.collection("users").doc(userId).set({ username: name, photoURL: pic }, { merge: true });
+            closeModal('profileModal'); syncProfile();
+        } catch(e) { alert("Error: " + e.message); }
     }
 
     function togglePasswordVisibility() {
@@ -396,12 +350,7 @@
     }
 
     function login() { auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
-    function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).then(() => alert("Welcome!")).catch(e => alert(e.message)); }
-    function forgotPassword() {
-        const email = document.getElementById("email").value;
-        if(!email) return alert("Please enter your email first!");
-        auth.sendPasswordResetEmail(email).then(() => alert("Reset link sent!")).catch(e => alert(e.message));
-    }
+    function signup() { auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(e => alert(e.message)); }
     function logout() { if(confirm("Logout?")) auth.signOut().then(() => location.reload()); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -432,8 +381,9 @@
 
     async function deleteGroup(event, gId) {
         event.stopPropagation();
-        if (confirm("Delete this Chat?")) {
-            try { await db.collection("groups").doc(gId).delete(); if (roomId === gId) { roomId = null; document.getElementById("placeholderUI").style.display = "flex"; document.getElementById("chatInterface").style.display = "none"; } } catch (e) { alert(e.message); }
+        if (confirm("Delete Chat?")) {
+            await db.collection("groups").doc(gId).delete();
+            if (roomId === gId) { roomId = null; document.getElementById("placeholderUI").style.display = "flex"; document.getElementById("chatInterface").style.display = "none"; }
         }
     }
 
@@ -444,13 +394,13 @@
         document.getElementById("activeGroupName").innerText = name;
         document.getElementById("roomDisplay").innerText = id;
         document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK";
-        loadGroups(); listenMessages();
+        listenMessages();
     }
 
     async function addFriend() {
         const fUid = document.getElementById("friendUid").value;
         if(!fUid || !roomId) return;
-        try { await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) }); document.getElementById("friendUid").value = ""; closeModal('friendModal'); alert("Added!"); } catch(e) { alert(e.message); }
+        try { await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) }); closeModal('friendModal'); alert("Added!"); } catch(e) { alert(e.message); }
     }
 
     function toggleSecretInput() { 
@@ -464,11 +414,101 @@
         if(key) { roomKey = key; isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCKED"; document.getElementById("masterKey").value = ""; renderAllMessages(); } 
     }
 
+    /* --- FEATURE: SEEN STATUS --- */
+    async function markAsSeen(msgId, currentSeenBy) {
+        if (!currentSeenBy.includes(userId)) {
+            try {
+                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
+                    seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
+                });
+            } catch (e) { console.log("Seen update error"); }
+        }
+    }
+
+    function renderAllMessages() {
+        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
+        allMessages.forEach(m => {
+            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
+            
+            // Auto-mark as seen if chat is unlocked
+            if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
+
+            let content;
+            if(isDecoded) {
+                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
+            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
+
+            // Status Ticks Logic
+            let statusHtml = "";
+            if (m.sender === userId) {
+                const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
+                const tickClass = seenCount > 0 ? "seen-blue" : "delivered-grey";
+                statusHtml = `<span class="status-ticks ${tickClass}">✓✓</span>`;
+            }
+
+            let replyHtml = "";
+            if (m.replyTo && isDecoded) {
+                const originalMsg = allMessages.find(msg => msg.id === m.replyTo.id);
+                if (originalMsg) {
+                    try {
+                        const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
+                        const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
+                        replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">${rText}</div></div>`;
+                    } catch(e) { replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">Encrypted</div></div>`; }
+                } else { replyHtml = `<div class="reply-wrapper" style="opacity:0.6;"><div class="reply-bar-accent" style="opacity:0.4;"></div><div class="reply-preview-text" style="font-style:italic;">Deleted</div></div>`; }
+            }
+
+            let reactionHtml = "";
+            if(m.reactions && isDecoded) {
+                reactionHtml = `<div class="reactions-container">`;
+                for(let emoji in m.reactions) {
+                    let count = m.reactions[emoji].length;
+                    let active = m.reactions[emoji].includes(userId) ? 'active' : '';
+                    if(count > 0) reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
+                }
+                reactionHtml += `</div>`;
+            }
+
+            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
+            let actionButtons = isDecoded ? `<div class="msg-actions">
+                <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
+                <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
+                ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
+                ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+            </div>` : "";
+            
+            let senderName = m.senderName || "Unknown";
+            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
+            chatBox.appendChild(d);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function handleSendAction() {
+        if(!roomId || !isDecoded) return;
+        let input = document.getElementById("inputText"), txt = input.value.trim();
+        if(!txt) return;
+
+        if(editingMsgId) {
+            const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
+            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ text: encryptedText, edited: true });
+            cancelEdit();
+        } else {
+            const msgData = { 
+                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
+                sender: userId, senderName: currentUserProfile.username, 
+                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
+            };
+            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
+            db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            input.value = ""; input.style.height = '50px';
+        }
+    }
+
     function setReply(id, encryptedText) {
         if(!isDecoded) return;
-        cancelEdit();
         let plainText = "";
-        try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = "Encrypted Message"; }
+        try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = "Encrypted"; }
         replyingTo = { id, text: encryptedText, plain: plainText };
         document.getElementById("replyBar").style.display = "flex";
         document.getElementById("replyPreviewText").innerText = plainText;
@@ -484,135 +524,35 @@
         try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = ""; }
         editingMsgId = id;
         document.getElementById("inputText").value = plainText;
-        document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg>';
+        document.getElementById("sendIcon").innerHTML = '✓';
         document.getElementById("inputText").focus();
     }
 
-    function cancelEdit() {
-        editingMsgId = null;
-        document.getElementById("inputText").value = "";
-        document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>';
-    }
+    function cancelEdit() { editingMsgId = null; document.getElementById("inputText").value = ""; document.getElementById("sendIcon").innerHTML = '➤'; }
 
-    function openReaction(id) {
-        if(!isDecoded) return;
-        reactingToId = id;
-        openModal('reactionModal');
-    }
+    function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 
     async function addReaction(emoji) {
-        if(!reactingToId || !roomId) return;
+        if(!reactingToId) return;
         const msgRef = db.collection("groups").doc(roomId).collection("messages").doc(reactingToId);
-        
-        try {
-            const doc = await msgRef.get();
-            const reactions = doc.data().reactions || {};
-            if(!reactions[emoji]) reactions[emoji] = [];
-            
-            if(reactions[emoji].includes(userId)) {
-                reactions[emoji] = reactions[emoji].filter(u => u !== userId);
-                if(reactions[emoji].length === 0) delete reactions[emoji];
-            } else {
-                reactions[emoji].push(userId);
-            }
-            
-            await msgRef.update({ reactions });
-            closeModal('reactionModal');
-            reactingToId = null;
-        } catch(e) { console.error(e); }
-    }
-
-    function renderAllMessages() {
-        const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
-        allMessages.forEach(m => {
-            let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
-            let content;
-            if(isDecoded) {
-                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
-            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
-
-            let replyHtml = "";
-            if (m.replyTo && isDecoded) {
-                const originalMsg = allMessages.find(msg => msg.id === m.replyTo.id);
-                if (originalMsg) {
-                    try {
-                        const rBytes = CryptoJS.AES.decrypt(m.replyTo.text, roomKey);
-                        const rText = rBytes.toString(CryptoJS.enc.Utf8) || "Encrypted Message";
-                        replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">${rText}</div></div>`;
-                    } catch(e) { replyHtml = `<div class="reply-wrapper"><div class="reply-bar-accent"></div><div class="reply-preview-text">Encrypted</div></div>`; }
-                } else {
-                    replyHtml = `<div class="reply-wrapper" style="opacity:0.6;"><div class="reply-bar-accent" style="opacity:0.4;"></div><div class="reply-preview-text" style="font-style:italic;">Original message deleted</div></div>`;
-                }
-            }
-
-            // Reactions Logic
-            let reactionHtml = "";
-            if(m.reactions && isDecoded) {
-                reactionHtml = `<div class="reactions-container">`;
-                for(let emoji in m.reactions) {
-                    let count = m.reactions[emoji].length;
-                    let active = m.reactions[emoji].includes(userId) ? 'active' : '';
-                    if(count > 0) {
-                        reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
-                    }
-                }
-                reactionHtml += `</div>`;
-            }
-
-            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
-            let actionButtons = isDecoded ? `<div class="msg-actions">
-                <button class="action-btn react-btn" onclick="openReaction('${m.id}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12,2C6.47,2,2,6.47,2,12s4.47,10,10,10s10-4.47,10-10S17.53,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M15.5,11c0.83,0,1.5-0.67,1.5-1.5S16.33,8,15.5,8S14,8.67,14,9.5S14.67,11,15.5,11z M8.5,11 c0.83,0,1.5-0.67,1.5-1.5S9.33,8,8.5,8S7,8.67,7,9.5S7.67,11,8.5,11z M12,17.5c2.33,0,4.31-1.46,5.11-3.5H6.89 C7.69,16.04,9.67,17.5,12,17.5z"/></svg></button>
-                <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z"/></svg></button>
-                ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/></svg></button>` : ''}
-                ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
-            </div>` : "";
-            
-            let senderName = m.senderName || "Unknown";
-            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div>${content}${editedTag}</div>${reactionHtml}${actionButtons}`;
-            chatBox.appendChild(d);
-        });
-        chatBox.scrollTop = chatBox.scrollHeight;
+        const doc = await msgRef.get();
+        const reactions = doc.data().reactions || {};
+        if(!reactions[emoji]) reactions[emoji] = [];
+        if(reactions[emoji].includes(userId)) { reactions[emoji] = reactions[emoji].filter(u => u !== userId); } 
+        else { reactions[emoji].push(userId); }
+        await msgRef.update({ reactions });
+        closeModal('reactionModal');
     }
 
     async function deleteMessage(msgId) {
-        if (!isDecoded || !confirm("Delete this message?")) return;
-        try { await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete(); } catch (e) { alert(e.message); }
-    }
-
-    async function handleSendAction() {
-        if(!roomId || !isDecoded) return;
-        let input = document.getElementById("inputText"), txt = input.value.trim();
-        if(!txt) return;
-
-        if(editingMsgId) {
-            try {
-                const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
-                await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({
-                    text: encryptedText,
-                    edited: true
-                });
-                cancelEdit();
-            } catch(e) { alert("Failed to edit: " + e.message); }
-        } else {
-            const msgData = { 
-                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
-                sender: userId,
-                senderName: currentUserProfile.username, 
-                time: Date.now(),
-                edited: false,
-                reactions: {} 
-            };
-            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
-            db.collection("groups").doc(roomId).collection("messages").add(msgData);
-            input.value = ""; input.style.height = '50px';
-        }
+        if (isDecoded && confirm("Delete?")) await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();
     }
 
     function listenMessages() {
         if(unsubscribeMessages) unsubscribeMessages();
         unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
-        }, (error) => { console.log("Listen error"); });
+        });
     }
 </script>
 </body>

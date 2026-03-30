@@ -261,18 +261,52 @@
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    async function createGroup() {
-        const name = document.getElementById("newGroupName").value;
-        if(!name) return;
-        try {
-            const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
-            document.getElementById("newGroupName").value = ""; closeModal('groupModal');
-            switchGroup(g.id, name);
-        } catch(e) { alert("Permission Error"); }
-    }
+    function createGroup() {
+    const groupName = document.getElementById('groupNameInput').value; // Make sure this ID matches your input
+    const user = firebase.auth().currentUser;
+
+    if (!groupName) return alert("Enter a name!");
+
+    // This sends the data to the Realtime Database 'groups' folder
+    const newGroupRef = db.ref('groups').push(); 
+    newGroupRef.set({
+        name: groupName,
+        createdBy: user.uid,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+    })
+    .then(() => {
+        alert("Group Created!");
+        closeModal(); // Replace with your function name to close the popup
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Permission Error: " + error.message);
+    });
+}
 
     function loadGroups() {
-        db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
+        // PASTE THIS REALTIME DATABASE CODE:
+db.ref('groups').on('value', (snapshot) => {
+    const chatList = document.getElementById('chatList');
+    chatList.innerHTML = ""; // Clears the list so it doesn't double up
+
+    snapshot.forEach((childSnapshot) => {
+        const group = childSnapshot.val();
+        const groupId = childSnapshot.key;
+
+        // This creates the visual button for the group in your sidebar
+        const groupElement = document.createElement('div');
+        groupElement.className = "chat-item"; // Matches your CSS
+        groupElement.innerText = group.name;
+        
+        groupElement.onclick = () => {
+            // This is where we will load the messages for this group later
+            console.log("Switched to chat:", groupId);
+        };
+
+        chatList.appendChild(groupElement);
+    });
+});{
             const list = document.getElementById("groupList"); list.innerHTML = "";
             sn.forEach(doc => {
                 const data = doc.data();
@@ -282,7 +316,7 @@
                 div.onclick = () => switchGroup(doc.id, data.name);
                 list.appendChild(div);
             });
-        });
+        };
     }
 
     async function deleteGroup(event, gId) {

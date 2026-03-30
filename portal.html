@@ -267,7 +267,10 @@
             const g = await db.collection("groups").add({ name, members: [userId], createdAt: Date.now() });
             document.getElementById("newGroupName").value = ""; closeModal('groupModal');
             switchGroup(g.id, name);
-        } catch(e) { alert("Permission Error"); }
+        } catch(e) { 
+    console.error("Technical details:", e);
+    alert("Database Error: " + e.message); 
+}
     }
 
     function loadGroups() {

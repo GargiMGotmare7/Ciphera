@@ -143,9 +143,22 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        .status-ticks { font-size: 10px; margin-left: 8px; font-weight: bold; }
-        .seen-blue { color: #38bdf8; }
-        .delivered-grey { color: rgba(255,255,255,0.4); }
+/* High-Contrast Ticks */
+   .status-ticks { 
+    font-size: 12px; 
+    margin-left: 8px; 
+    font-weight: 900; 
+    letter-spacing: -1px; /* Makes them look like WhatsApp ticks */
+    }
+
+   .seen-blue { 
+    color: #00f2ff !important; /* Cyber Cyan */
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); 
+   }
+
+   .delivered-grey { 
+    color: #64748b !important; /* Slate grey - much more visible than the old one */
+  }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; }
@@ -439,12 +452,18 @@
             } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
             // Status Ticks Logic
-            let statusHtml = "";
-            if (m.sender === userId) {
-                const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
-                const tickClass = seenCount > 0 ? "seen-blue" : "delivered-grey";
-                statusHtml = `<span class="status-ticks ${tickClass}">✓✓</span>`;
-            }
+let statusHtml = "";
+if (m.sender === userId) {
+    const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
+    
+    if (seenCount > 0) {
+        // BLUE TICKS
+        statusHtml = `<span class="status-ticks seen-blue" title="Seen by others">✓✓</span>`;
+    } else {
+        // GREY TICKS
+        statusHtml = `<span class="status-ticks delivered-grey" title="Delivered to server">✓✓</span>`;
+    }
+}
 
             let replyHtml = "";
             if (m.replyTo && isDecoded) {

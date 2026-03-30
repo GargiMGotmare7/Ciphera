@@ -144,20 +144,25 @@
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
 /* High-Contrast Ticks */
-.status-ticks { 
-    font-size: 12px; 
+   /* --- NEW STATUS INDICATORS --- */
+.status-indicator { 
+    font-size: 14px; 
     margin-left: 8px; 
-    font-weight: 900; 
-    letter-spacing: -1px; /* Makes them look like WhatsApp ticks */
+    font-weight: 900;
 }
 
-.seen-blue { 
-    color: #00f2ff !important; /* Cyber Cyan */
-    text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); 
+.status-read { 
+    color: #00f2ff !important; 
+    text-shadow: 0 0 10px #00f2ff; 
 }
 
-.delivered-grey { 
-    color: #64748b !important; /* Slate grey - much more visible than the old one */
+.status-delivered { 
+    color: #64748b !important; 
+}
+
+.status-sent { 
+    color: white !important; 
+    opacity: 0.2; 
 }
 
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
@@ -428,15 +433,20 @@
     }
 
     /* --- FEATURE: SEEN STATUS --- */
-    async function markAsSeen(msgId, currentSeenBy) {
-        if (!currentSeenBy.includes(userId)) {
-            try {
-                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
+   async function updateMessageStatus(msgId, currentSeenBy) {
+    // Only update if we haven't 'seen' it yet and we aren't the sender
+    if (userId && !currentSeenBy.includes(userId)) {
+        try {
+            await db.collection("groups").doc(roomId)
+                .collection("messages").doc(msgId)
+                .update({
                     seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
                 });
-            } catch (e) { console.log("Seen update error"); }
+        } catch (e) {
+            console.log("Status update suppressed");
         }
     }
+}
 
     function renderAllMessages() {
         const chatBox = document.getElementById("chatBox"); chatBox.innerHTML = "";
@@ -452,18 +462,27 @@
             } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
 
             // Status Ticks Logic
-            // Status Ticks Logic (Enhanced Visibility)
+// --- NEW RENDER LOGIC ---
 let statusHtml = "";
 if (m.sender === userId) {
-    const seenCount = (m.seenBy || []).filter(id => id !== userId).length;
-    
-    if (seenCount > 0) {
-        // BLUE TICKS
-        statusHtml = `<span class="status-ticks seen-blue" title="Seen by others">✓✓</span>`;
+    // 1. Sent (○) - If message has no ID yet (local state)
+    if (!m.id) {
+        statusHtml = `<span class="status-indicator status-sent" title="Sent">○</span>`;
     } else {
-        // GREY TICKS
-        statusHtml = `<span class="status-ticks delivered-grey" title="Delivered to server">✓✓</span>`;
+        // 2. Read (⦿) - If someone else's UID is in seenBy
+        const othersHaveSeen = (m.seenBy || []).some(id => id !== userId);
+        if (othersHaveSeen) {
+            statusHtml = `<span class="status-indicator status-read" title="Read">⦿</span>`;
+        } else {
+            // 3. Delivered (●) - In Firestore but not read by others
+            statusHtml = `<span class="status-indicator status-delivered" title="Delivered">●</span>`;
+        }
     }
+}
+
+// Trigger "Read" update for received messages if chat is unlocked
+if (m.sender !== userId && isDecoded && m.id) {
+    updateMessageStatus(m.id, m.seenBy || []);
 }
 
             let replyHtml = "";
@@ -498,8 +517,16 @@ if (m.sender === userId) {
             </div>` : "";
             
             let senderName = m.senderName || "Unknown";
-            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
-            chatBox.appendChild(d);
+            d.innerHTML = `
+    <span class="msg-sender-name">${senderName}</span>
+    ${replyHtml}
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>${content}${editedTag}</div>
+        ${statusHtml} 
+    </div>
+    ${reactionHtml}
+    ${actionButtons}
+`;
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     }

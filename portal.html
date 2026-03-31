@@ -12,6 +12,14 @@
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
 
     <style>
+        .group-item {
+    position: relative; /* Ensure the dot stays attached to the icon */
+}
+
+/* Optional: Add a subtle glow to the online dot */
+[id^="status-"] {
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
         :root {
             --bg: #020617;
             --sidebar: rgba(15, 23, 42, 0.6);
@@ -250,13 +258,30 @@
     });
 
     auth.onAuthStateChanged(u => { 
-        if(u){ 
-            userId = u.uid; document.getElementById("myUidDisplay").innerText = userId;
-            syncProfile(); loadGroups();
-        } else { 
-            window.location.href = "index.html"; 
-        } 
-    });
+    if(u){ 
+        userId = u.uid; 
+        document.getElementById("myUidDisplay").innerText = userId;
+        updateMyPresence('online'); 
+        syncProfile(); 
+        loadGroups();
+    } else { 
+        window.location.href = "index.html"; 
+    } 
+});
+
+async function updateMyPresence(status) {
+    if (!userId) return;
+    try {
+        await db.collection("users").doc(userId).set({
+            status: status,
+            lastSeen: Date.now()
+        }, { merge: true });
+    } catch (e) { console.error("Presence Error:", e); }
+}
+
+window.addEventListener('focus', () => updateMyPresence('online'));
+window.addEventListener('blur', () => updateMyPresence('away'));
+window.addEventListener('beforeunload', () => updateMyPresence('offline'));
 
     async function syncProfile() {
         try {
@@ -295,19 +320,54 @@
     }
 
     function loadGroups() {
-        db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
-            const list = document.getElementById("groupList"); list.innerHTML = "";
-            sn.forEach(doc => {
-                const data = doc.data();
-                const div = document.createElement("div");
-                div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-                div.innerHTML = `<div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">${data.name[0].toUpperCase()}</div><div><b style="display:block">${data.name}</b><small style="opacity:0.5; font-size:10px">Encrypted</small></div><button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
-                div.onclick = () => switchGroup(doc.id, data.name);
-                list.appendChild(div);
-            });
-        });
-    }
+    db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
+        const list = document.getElementById("groupList"); 
+        list.innerHTML = "";
+        sn.forEach(doc => {
+            const data = doc.data();
+            const otherMemberId = data.members.find(m => m !== userId);
+            
+            // Create the item
+            const div = document.createElement("div");
+            div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
+            
+            // Default dot (Grey/Offline)
+            let statusDotHtml = `<span id="status-${doc.id}" style="width:10px; height:10px; border-radius:50%; background:#64748b; border:2px solid #0f172a; position:absolute; bottom:2px; right:2px; z-index:10;"></span>`;
 
+            div.innerHTML = `
+                <div style="position:relative; width:40px; height:40px;">
+                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">
+                        ${data.name[0].toUpperCase()}
+                    </div>
+                    ${statusDotHtml}
+                </div>
+                <div style="margin-left:12px;">
+                    <b style="display:block">${data.name}</b>
+                    <small id="text-${doc.id}" style="opacity:0.5; font-size:10px">Offline</small>
+                </div>
+                <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
+            
+            // Listen for the other person's status
+            if (otherMemberId) {
+                db.collection("users").doc(otherMemberId).onSnapshot(uDoc => {
+                    const uData = uDoc.data();
+                    const dot = document.getElementById(`status-${doc.id}`);
+                    const txt = document.getElementById(`text-${doc.id}`);
+                    if (dot && uData) {
+                        const isOnline = uData.status === 'online';
+                        dot.style.background = isOnline ? '#22c55e' : '#64748b';
+                        dot.style.boxShadow = isOnline ? '0 0 8px #22c55e' : 'none';
+                        txt.innerText = isOnline ? 'Online' : 'Offline';
+                        txt.style.color = isOnline ? 'var(--accent)' : 'rgba(255,255,255,0.5)';
+                    }
+                });
+            }
+
+            div.onclick = () => switchGroup(doc.id, data.name);
+            list.appendChild(div);
+        });
+    });
+}
     async function deleteGroup(event, gId) {
         event.stopPropagation();
         if (confirm("Delete Chat?")) {
@@ -481,6 +541,7 @@
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
         });
     }
+    
 </script>
 </body>
 </html>

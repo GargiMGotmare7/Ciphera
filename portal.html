@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ciphera | Stealth Portal</title>
+    <title>Ciphera</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -37,35 +37,38 @@
 
         #app { display: flex; width: 100%; height: 100%; flex-direction: row; }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 320px; background: var(--sidebar); backdrop-filter: blur(15px);
             border-right: 1px solid var(--glass-border); display: flex; flex-direction: column;
         }
+
         .sidebar-header { padding: 30px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+
         .group-list { flex: 1; overflow-y: auto; padding: 15px; }
+        
         .group-item {
-            position: relative; padding: 12px; margin-bottom: 10px; border-radius: 18px; cursor: pointer;
+            position: relative;
+            padding: 12px; margin-bottom: 10px; border-radius: 18px; cursor: pointer;
             display: flex; align-items: center; gap: 12px; border: 1px solid transparent;
         }
         .group-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
 
-        /* Message Bubbles */
-        .message { 
-            position: relative; padding: 8px 12px; border-radius: 16px; margin: 4px 0; 
-            max-width: 65%; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word;
+        .delete-grp-btn {
+            position: absolute; top: 10px; right: 10px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2); color: var(--danger);
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; opacity: 0; transition: opacity 0.2s;
         }
-        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
-        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+        .group-item:hover .delete-grp-btn { opacity: 1; }
 
-        /* Actions & UI Elements */
         .msg-actions {
             position: absolute; top: 50%; transform: translateY(-50%); 
             display: flex; gap: 4px; opacity: 0; transition: 0.2s; z-index: 5;
         }
-        .sent .msg-actions { left: -110px; }
-        .received .msg-actions { right: -110px; flex-direction: row-reverse; }
+        .sent .msg-actions { left: -120px; flex-direction: row; }
+        .received .msg-actions { right: -60px; left: auto; flex-direction: row-reverse; }
         .message:hover .msg-actions { opacity: 1; }
         
         .action-btn {
@@ -74,7 +77,45 @@
             color: white; background: rgba(255,255,255,0.1); backdrop-filter: blur(5px);
         }
 
-        .status-ticks { font-size: 8px; margin-left: 4px; font-weight: 900; }
+        .reactions-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .reaction-pill {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            padding: 2px 8px; border-radius: 10px; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .reaction-pill.active { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); }
+
+        .reply-wrapper {
+            position: relative; margin-bottom: 8px; overflow: hidden; display: flex;
+            align-items: stretch; background: rgba(0, 0, 0, 0.2); border-radius: 8px;
+        }
+        .reply-bar-accent { width: 4px; flex-shrink: 0; background: var(--accent); }
+        .reply-preview-text { padding: 8px 12px; font-size: 12px; font-weight: 500; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+        #replyBar {
+            display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.1);
+            border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center;
+        }
+
+        .main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header { 
+            padding: 20px 30px; background: rgba(15, 23, 42, 0.3); 
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
+
+        .message { 
+            position: relative; padding: 6px 6px; border-radius: 16px; margin: 4px 0; 
+            max-width: 60%; font-size: 0.9rem; line-height: 1.3; word-wrap: break-word;
+        }
+        .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
+        .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
+
+        .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; opacity: 0.7; display: block; }
+        .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
+
+        .status-ticks { font-size: 8px; margin-left: 4px; font-weight: 900; letter-spacing: 0px; }
         .seen-blue { color: #00f2ff !important; text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); }
         .delivered-grey { color: #64748b !important; }
 
@@ -90,17 +131,13 @@
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
-        
-        .delete-grp-btn { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0; }
-        .group-item:hover .delete-grp-btn { opacity: 1; }
-
-        /* Reply Preview Styling */
-        #replyBar { display: none; padding: 12px 25px; background: rgba(56, 189, 248, 0.1); border-top: 1px solid var(--glass-border); justify-content: space-between; align-items: center; }
-        .reply-wrapper { position: relative; margin-bottom: 8px; overflow: hidden; display: flex; align-items: stretch; background: rgba(0, 0, 0, 0.2); border-radius: 8px; }
-        .reply-bar-accent { width: 4px; flex-shrink: 0; background: var(--accent); }
-        .reply-preview-text { padding: 8px 12px; font-size: 12px; font-weight: 500; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         emoji-picker { width: 100%; height: 350px; --background: #0f172a; }
+        emoji-picker::part(nav), emoji-picker::part(recent-section) { display: none; }
+
+        .unlock-pill { background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        #placeholderUI { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px); }
+        .profile-pic { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -109,7 +146,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="openModal('profileModal')">
-                <img id="myAvatar" src="https://ui-avatars.com/api/?name=User" style="width:35px; height:35px; border-radius:50%; border: 2px solid var(--accent);">
+                <img id="myAvatar" src="https://ui-avatars.com/api/?name=User" class="profile-pic">
                 <div>
                     <b id="myNameDisplay" style="display:block; font-size:14px;">User</b>
                     <small style="font-size:9px; color:var(--accent)">Edit Profile</small>
@@ -131,12 +168,14 @@
         </div>
 
         <div id="chatInterface" style="display:none; flex-direction: column; height: 100%;">
-            <div class="chat-header" style="padding: 20px 30px; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <div class="chat-header">
                 <div>
                     <b id="activeGroupName" style="font-size: 1.2rem;">Select Chat</b><br>
                     <small id="roomDisplay" style="opacity:0.4; font-size:9px"></small>
                 </div>
-                <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn" style="background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;">🔓 UNLOCK</button>
+                <div style="display:flex; gap:10px">
+                    <button onclick="toggleSecretInput()" class="unlock-pill" id="lockStatusBtn">🔓 UNLOCK</button>
+                </div>
             </div>
 
             <div id="lockerRoom" style="display:none; padding: 20px; background: rgba(0,0,0,0.3); text-align: center; border-bottom: 1px solid var(--secondary);">
@@ -145,7 +184,7 @@
                 <button onclick="openModal('friendModal')" style="background:var(--secondary); border:none; padding:10px 20px; border-radius:12px; cursor:pointer; margin-left:5px; font-weight:bold;">Invite</button>
             </div>
 
-            <div class="chat-container" id="chatBox" style="flex:1; overflow-y:auto; padding:30px; display:flex; flex-direction:column;"></div>
+            <div class="chat-container" id="chatBox"></div>
 
             <div id="replyBar">
                 <div class="reply-wrapper" id="replyPreviewArea" style="flex:1; margin-right:15px;">
@@ -329,23 +368,24 @@
 
             let reactionHtml = "";
             if(m.reactions && isDecoded) {
-                reactionHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">`;
+                reactionHtml = `<div class="reactions-container">`;
                 for(let emoji in m.reactions) {
                     let count = m.reactions[emoji].length;
-                    if(count > 0) reactionHtml += `<div style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:10px; font-size:12px; cursor:pointer;" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} ${count}</div>`;
+                    let active = m.reactions[emoji].includes(userId) ? 'active' : '';
+                    if(count > 0) reactionHtml += `<div class="reaction-pill ${active}" onclick="reactingToId='${m.id}'; addReaction('${emoji}')">${emoji} <span>${count}</span></div>`;
                 }
                 reactionHtml += `</div>`;
             }
 
-            let editedTag = m.edited ? `<span style="font-size:9px; opacity:0.4; font-style:italic; margin-left:5px;">(edited)</span>` : "";
+            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
             let actionButtons = isDecoded ? `<div class="msg-actions">
-                <button class="action-btn" onclick="openReaction('${m.id}')">☺</button>
-                <button class="action-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
-                ${m.sender === userId ? `<button class="action-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
-                ${m.sender === userId ? `<button class="action-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+                <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
+                <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
+                ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
+                ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
-            d.innerHTML = `<span style="font-size:10px; font-weight:bold; margin-bottom:2px; opacity:0.7; display:block;">${m.senderName || "Unknown"}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
+            d.innerHTML = `<span class="msg-sender-name">${m.senderName || "Unknown"}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;

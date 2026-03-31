@@ -126,36 +126,17 @@
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
 
         /* CHANGE 1: Centering for the larger Send Icon */
-        /* This replaces your old button and arrow styles */
-.btn-circle { 
+        .btn-circle { 
     background: linear-gradient(135deg, var(--accent), var(--secondary)); 
     border: none; 
-    width: 52px; 
-    height: 52px; 
+    width: 45px;     
+    height: 45px; 
     border-radius: 50%; 
     cursor: pointer; 
     display: flex; 
     align-items: center; 
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-    position: relative;
-    overflow: hidden;
-    background-image: none !important; /* Kills the ghost arrow */
-}
-
-/* This styles the new SVG arrow specifically */
-.send-arrow {
-    width: 24px;
-    height: 24px;
-    fill: white;
-    transform: translateX(2px); /* Makes it look centered to the eye */
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-}
-
-/* Force-remove any extra icons from old code */
-.btn-circle::before, .btn-circle::after {
-    display: none !important;
-    content: none !important;
+    justify-content: center; 
+    padding: 0;    
 }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
@@ -227,9 +208,9 @@
                 <textarea id="inputText" placeholder="Type something secret..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
                 <button class="btn-circle" id="sendBtn" onclick="handleSendAction()">
                     <span id="sendIcon">
-                        <svg class="send-arrow" viewBox="0 0 24 24">
-    <path d="M4.01 6.03l7.51 3.22-7.52-1 .01-2.22m7.5 8.72L4 17.97v-2.22l7.51-1M2.01 3L2 10l15 2-15 2 .01 7L23 12 2.01 3z"/>
-</svg>
+                        <svg viewBox="0 0 24 24" width="34" height="34" fill="white">
+                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path>
+                        </svg>
                     </span>
                 </button>
             </div>
@@ -461,15 +442,11 @@
         document.getElementById("inputText").focus();
     }
 
-    function cancelEdit() {
-    editingMsgId = null;
-    document.getElementById("inputText").value = "";
-    // Put the SAME new SVG here so it stays consistent
-    document.getElementById("sendIcon").innerHTML = `
-        <svg class="send-arrow" viewBox="0 0 24 24">
-            <path d="M4.01 6.03l7.51 3.22-7.52-1 .01-2.22m7.5 8.72L4 17.97v-2.22l7.51-1M2.01 3L2 10l15 2-15 2 .01 7L23 12 2.01 3z"/>
-        </svg>`;
-}
+    function cancelEdit() { 
+        editingMsgId = null; 
+        document.getElementById("inputText").value = ""; 
+        document.getElementById("sendIcon").innerHTML = '<svg viewBox="0 0 24 24" width="34" height="34" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>'; 
+    }
 
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 

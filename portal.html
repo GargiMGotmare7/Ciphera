@@ -12,14 +12,6 @@
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
 
     <style>
-        .group-item {
-    position: relative; /* Ensure the dot stays attached to the icon */
-}
-
-/* Optional: Add a subtle glow to the online dot */
-[id^="status-"] {
-    transition: background 0.3s ease, box-shadow 0.3s ease;
-}
         :root {
             --bg: #020617;
             --sidebar: rgba(15, 23, 42, 0.6);
@@ -29,6 +21,7 @@
             --text: #f1f5f9;
             --glass-border: rgba(255, 255, 255, 0.1);
             --danger: #ef4444;
+            --online: #22c55e;
         }
 
         * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
@@ -62,6 +55,14 @@
         .group-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .active-group { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
 
+        /* Presence Dot */
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #64748b;
+            border: 2px solid var(--bg); position: absolute; bottom: 2px; right: 2px;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        .dot-online { background: var(--online) !important; box-shadow: 0 0 8px var(--online); }
+
         .delete-grp-btn {
             position: absolute; top: 10px; right: 10px;
             width: 22px; height: 22px; border-radius: 50%;
@@ -71,7 +72,6 @@
         }
         .group-item:hover .delete-grp-btn { opacity: 1; }
 
-        /* CHANGE 4: Action buttons moved very close to bubbles */
         .msg-actions {
             position: absolute; top: 50%; transform: translateY(-50%); 
             display: flex; gap: 4px; opacity: 0; transition: 0.2s; z-index: 5;
@@ -114,7 +114,6 @@
         }
         .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
-        /* CHANGE 2: Smaller, tighter message bubbles */
         .message { 
             position: relative; padding: 6px 6px; border-radius: 16px; margin: 4px 0; 
             max-width: 60%; font-size: 0.9rem; line-height: 1.3; word-wrap: break-word;
@@ -125,7 +124,6 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        /* CHANGE 3: Smaller ticks */
         .status-ticks { font-size: 8px; margin-left: 4px; font-weight: 900; letter-spacing: 0px; }
         .seen-blue { color: #00f2ff !important; text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); }
         .delivered-grey { color: #64748b !important; }
@@ -133,25 +131,12 @@
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
 
-        /* CHANGE 1: Centering for the larger Send Icon */
         .btn-circle { 
-    background: linear-gradient(135deg, var(--accent), var(--secondary)); 
-    border: none; 
-    width: 45px;     
-    height: 45px; 
-    border-radius: 50%; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    padding: 0;
-    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
-}
-
-.btn-circle:hover {
-    transform: scale(1.05);
-    filter: brightness(1.1);
-}
+            background: linear-gradient(135deg, var(--accent), var(--secondary)); 
+            border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; padding: 0;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
+        }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
@@ -253,35 +238,36 @@
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
 
+    // PRESENCE LOGIC
+    async function updatePresence(status) {
+        if (!userId) return;
+        try {
+            await db.collection("users").doc(userId).set({
+                status: status,
+                lastSeen: Date.now()
+            }, { merge: true });
+        } catch(e) { console.error("Presence error", e); }
+    }
+
+    window.addEventListener('focus', () => updatePresence('online'));
+    window.addEventListener('blur', () => updatePresence('away'));
+    window.addEventListener('beforeunload', () => updatePresence('offline'));
+
     document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
         addReaction(event.detail.unicode);
     });
 
     auth.onAuthStateChanged(u => { 
-    if(u){ 
-        userId = u.uid; 
-        document.getElementById("myUidDisplay").innerText = userId;
-        updateMyPresence('online'); 
-        syncProfile(); 
-        loadGroups();
-    } else { 
-        window.location.href = "index.html"; 
-    } 
-});
-
-async function updateMyPresence(status) {
-    if (!userId) return;
-    try {
-        await db.collection("users").doc(userId).set({
-            status: status,
-            lastSeen: Date.now()
-        }, { merge: true });
-    } catch (e) { console.error("Presence Error:", e); }
-}
-
-window.addEventListener('focus', () => updateMyPresence('online'));
-window.addEventListener('blur', () => updateMyPresence('away'));
-window.addEventListener('beforeunload', () => updateMyPresence('offline'));
+        if(u){ 
+            userId = u.uid; 
+            document.getElementById("myUidDisplay").innerText = userId;
+            updatePresence('online');
+            syncProfile(); 
+            loadGroups();
+        } else { 
+            window.location.href = "index.html"; 
+        } 
+    });
 
     async function syncProfile() {
         try {
@@ -305,7 +291,12 @@ window.addEventListener('beforeunload', () => updateMyPresence('offline'));
         } catch(e) { alert("Error: " + e.message); }
     }
 
-    function logout() { if(confirm("Logout?")) auth.signOut().then(() => window.location.href = "index.html"); }
+    function logout() { 
+        updatePresence('offline').then(() => {
+            if(confirm("Logout?")) auth.signOut().then(() => window.location.href = "index.html");
+        });
+    }
+
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -320,54 +311,48 @@ window.addEventListener('beforeunload', () => updateMyPresence('offline'));
     }
 
     function loadGroups() {
-    db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
-        const list = document.getElementById("groupList"); 
-        list.innerHTML = "";
-        sn.forEach(doc => {
-            const data = doc.data();
-            const otherMemberId = data.members.find(m => m !== userId);
-            
-            // Create the item
-            const div = document.createElement("div");
-            div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
-            
-            // Default dot (Grey/Offline)
-            let statusDotHtml = `<span id="status-${doc.id}" style="width:10px; height:10px; border-radius:50%; background:#64748b; border:2px solid #0f172a; position:absolute; bottom:2px; right:2px; z-index:10;"></span>`;
-
-            div.innerHTML = `
-                <div style="position:relative; width:40px; height:40px;">
-                    <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">
-                        ${data.name[0].toUpperCase()}
+        db.collection("groups").where("members", "array-contains", userId).onSnapshot(sn => {
+            const list = document.getElementById("groupList"); list.innerHTML = "";
+            sn.forEach(doc => {
+                const data = doc.data();
+                const otherId = data.members.find(m => m !== userId);
+                
+                const div = document.createElement("div");
+                div.className = `group-item ${roomId === doc.id ? 'active-group' : ''}`;
+                
+                div.innerHTML = `
+                    <div style="position:relative; width:40px; height:40px;">
+                        <div style="width:40px; height:40px; border-radius:15px; background:linear-gradient(45deg, var(--accent), var(--secondary)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white">
+                            ${data.name[0].toUpperCase()}
+                        </div>
+                        <span id="dot-${doc.id}" class="status-dot"></span>
                     </div>
-                    ${statusDotHtml}
-                </div>
-                <div style="margin-left:12px;">
-                    <b style="display:block">${data.name}</b>
-                    <small id="text-${doc.id}" style="opacity:0.5; font-size:10px">Offline</small>
-                </div>
-                <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
-            
-            // Listen for the other person's status
-            if (otherMemberId) {
-                db.collection("users").doc(otherMemberId).onSnapshot(uDoc => {
-                    const uData = uDoc.data();
-                    const dot = document.getElementById(`status-${doc.id}`);
-                    const txt = document.getElementById(`text-${doc.id}`);
-                    if (dot && uData) {
-                        const isOnline = uData.status === 'online';
-                        dot.style.background = isOnline ? '#22c55e' : '#64748b';
-                        dot.style.boxShadow = isOnline ? '0 0 8px #22c55e' : 'none';
-                        txt.innerText = isOnline ? 'Online' : 'Offline';
-                        txt.style.color = isOnline ? 'var(--accent)' : 'rgba(255,255,255,0.5)';
-                    }
-                });
-            }
+                    <div>
+                        <b style="display:block">${data.name}</b>
+                        <small id="statText-${doc.id}" style="opacity:0.5; font-size:10px">Encrypted</small>
+                    </div>
+                    <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
+                
+                // Real-time Presence Listener for members
+                if(otherId) {
+                    db.collection("users").doc(otherId).onSnapshot(uDoc => {
+                        const uData = uDoc.data();
+                        const dot = document.getElementById(`dot-${doc.id}`);
+                        const txt = document.getElementById(`statText-${doc.id}`);
+                        if(dot && uData) {
+                            const isOnline = uData.status === 'online';
+                            isOnline ? dot.classList.add('dot-online') : dot.classList.remove('dot-online');
+                            txt.innerText = isOnline ? 'Online' : 'Encrypted';
+                        }
+                    });
+                }
 
-            div.onclick = () => switchGroup(doc.id, data.name);
-            list.appendChild(div);
+                div.onclick = () => switchGroup(doc.id, data.name);
+                list.appendChild(div);
+            });
         });
-    });
-}
+    }
+
     async function deleteGroup(event, gId) {
         event.stopPropagation();
         if (confirm("Delete Chat?")) {
@@ -509,13 +494,13 @@ window.addEventListener('beforeunload', () => updateMyPresence('offline'));
     }
 
     function cancelEdit() { 
-    editingMsgId = null; 
-    document.getElementById("inputText").value = ""; 
-    document.getElementById("sendIcon").innerHTML = `
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); margin-left: 2px;">
-            <path d="M3.4 20.4l17.45-7.48c.81-.35.81-1.49 0-1.84L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"></path>
-        </svg>`; 
-}
+        editingMsgId = null; 
+        document.getElementById("inputText").value = ""; 
+        document.getElementById("sendIcon").innerHTML = `
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); margin-left: 2px;">
+                <path d="M3.4 20.4l17.45-7.48c.81-.35.81-1.49 0-1.84L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"></path>
+            </svg>`; 
+    }
 
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 
@@ -541,7 +526,6 @@ window.addEventListener('beforeunload', () => updateMyPresence('offline'));
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
         });
     }
-    
 </script>
 </body>
 </html>

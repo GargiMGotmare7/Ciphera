@@ -137,8 +137,7 @@
     align-items: center; 
     justify-content: center; 
     padding: 0;
-    /* Optional: adds a soft glow to match the aesthetic */
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); 
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
 }
 
 .btn-circle:hover {
@@ -453,9 +452,9 @@
     editingMsgId = null; 
     document.getElementById("inputText").value = ""; 
     document.getElementById("sendIcon").innerHTML = `
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(10deg); margin-left: 2px;">
-    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-</svg>`; 
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l10 10-10 10M2 12h20"></path>
+        </svg>`; 
 }
 
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }

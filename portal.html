@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ciphera</title>
+    <title>Ciphera | Stealth Portal</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -57,11 +57,11 @@
 
         /* Presence Dot */
         .status-dot {
-            width: 10px; height: 10px; border-radius: 50%; background: #64748b;
-            border: 2px solid var(--bg); position: absolute; bottom: 2px; right: 2px;
-            transition: background 0.3s, box-shadow 0.3s;
+            width: 12px; height: 12px; border-radius: 50%; background: #64748b;
+            border: 2px solid #020617; position: absolute; bottom: 0px; right: 0px;
+            z-index: 10; transition: all 0.3s ease;
         }
-        .dot-online { background: var(--online) !important; box-shadow: 0 0 8px var(--online); }
+        .dot-online { background: var(--online) !important; box-shadow: 0 0 10px var(--online); }
 
         .delete-grp-btn {
             position: absolute; top: 10px; right: 10px;
@@ -115,8 +115,8 @@
         .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
         .message { 
-            position: relative; padding: 6px 6px; border-radius: 16px; margin: 4px 0; 
-            max-width: 60%; font-size: 0.9rem; line-height: 1.3; word-wrap: break-word;
+            position: relative; padding: 8px 12px; border-radius: 16px; margin: 4px 0; 
+            max-width: 60%; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word;
         }
         .sent { background: linear-gradient(135deg, var(--accent), #6366f1); margin-left: auto; color: white; border-bottom-right-radius: 4px; }
         .received { background: #1e293b; margin-right: auto; color: #e2e8f0; border-bottom-left-radius: 4px; }
@@ -124,7 +124,7 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
-        .status-ticks { font-size: 8px; margin-left: 4px; font-weight: 900; letter-spacing: 0px; }
+        .status-ticks { font-size: 10px; margin-left: 6px; font-weight: 900; }
         .seen-blue { color: #00f2ff !important; text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); }
         .delivered-grey { color: #64748b !important; }
 
@@ -223,6 +223,7 @@
 <div id="friendModal" class="modal"><div class="modal-content"><h3 style="margin-top:0; color:var(--secondary);">Invite Agent</h3><input id="friendUid" placeholder="User UID..." style="width:100%; padding: 14px; margin: 10px 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 15px; color: white;"><div style="display:flex; gap:10px; margin-top:10px;"><button onclick="addFriend()" style="flex:1; background:var(--secondary); border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">Add</button><button onclick="closeModal('friendModal')" style="flex:1; background:transparent; color:white; border:1px solid var(--glass-border); padding:12px; border-radius:12px; cursor:pointer;">Cancel</button></div></div></div>
 
 <script>
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = { 
         apiKey: "AIzaSyAqBq5P0It0bUcugEN6XxNM9DaO7JtFans", 
         authDomain: "ciphera-1.firebaseapp.com", 
@@ -238,7 +239,7 @@
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
 
-    // PRESENCE LOGIC
+    // --- PRESENCE LOGIC ---
     async function updatePresence(status) {
         if (!userId) return;
         try {
@@ -249,19 +250,17 @@
         } catch(e) { console.error("Presence error", e); }
     }
 
+    // Set online/offline triggers
     window.addEventListener('focus', () => updatePresence('online'));
     window.addEventListener('blur', () => updatePresence('away'));
     window.addEventListener('beforeunload', () => updatePresence('offline'));
 
-    document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
-        addReaction(event.detail.unicode);
-    });
-
+    // --- AUTH LOGIC ---
     auth.onAuthStateChanged(u => { 
         if(u){ 
             userId = u.uid; 
             document.getElementById("myUidDisplay").innerText = userId;
-            updatePresence('online');
+            updatePresence('online'); // Immediate online trigger
             syncProfile(); 
             loadGroups();
         } else { 
@@ -269,6 +268,7 @@
         } 
     });
 
+    // --- PROFILE & GROUPS ---
     async function syncProfile() {
         try {
             const userDoc = await db.collection("users").doc(userId).get();
@@ -296,9 +296,6 @@
             if(confirm("Logout?")) auth.signOut().then(() => window.location.href = "index.html");
         });
     }
-
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     async function createGroup() {
         const name = document.getElementById("newGroupName").value;
@@ -339,10 +336,17 @@
                         const uData = uDoc.data();
                         const dot = document.getElementById(`dot-${doc.id}`);
                         const txt = document.getElementById(`statText-${doc.id}`);
-                        if(dot && uData) {
+                        if(dot && txt && uData) {
                             const isOnline = uData.status === 'online';
-                            isOnline ? dot.classList.add('dot-online') : dot.classList.remove('dot-online');
-                            txt.innerText = isOnline ? 'Online' : 'Encrypted';
+                            if(isOnline) {
+                                dot.classList.add('dot-online');
+                                txt.innerText = 'Online';
+                                txt.style.color = 'var(--accent)';
+                            } else {
+                                dot.classList.remove('dot-online');
+                                txt.innerText = 'Encrypted';
+                                txt.style.color = 'rgba(255,255,255,0.5)';
+                            }
                         }
                     });
                 }
@@ -353,14 +357,7 @@
         });
     }
 
-    async function deleteGroup(event, gId) {
-        event.stopPropagation();
-        if (confirm("Delete Chat?")) {
-            await db.collection("groups").doc(gId).delete();
-            if (roomId === gId) { roomId = null; document.getElementById("placeholderUI").style.display = "flex"; document.getElementById("chatInterface").style.display = "none"; }
-        }
-    }
-
+    // --- CHAT LOGIC ---
     function switchGroup(id, name) {
         document.getElementById("placeholderUI").style.display = "none";
         document.getElementById("chatInterface").style.display = "flex";
@@ -371,30 +368,24 @@
         listenMessages();
     }
 
-    async function addFriend() {
-        const fUid = document.getElementById("friendUid").value;
-        if(!fUid || !roomId) return;
-        try { await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) }); closeModal('friendModal'); alert("Added!"); } catch(e) { alert(e.message); }
-    }
+    async function handleSendAction() {
+        if(!roomId || !isDecoded) return;
+        let input = document.getElementById("inputText"), txt = input.value.trim();
+        if(!txt) return;
 
-    function toggleSecretInput() { 
-        const box = document.getElementById("lockerRoom");
-        if(isDecoded) { isDecoded = false; roomKey = null; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK"; renderAllMessages(); box.style.display = "none"; }
-        else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
-    }
-
-    function applyKey() { 
-        const key = document.getElementById("masterKey").value; 
-        if(key) { roomKey = key; isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCKED"; document.getElementById("masterKey").value = ""; renderAllMessages(); } 
-    }
-
-    async function markAsSeen(msgId, currentSeenBy) {
-        if (!currentSeenBy.includes(userId)) {
-            try {
-                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
-                    seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
-                });
-            } catch (e) { console.log("Seen update error"); }
+        if(editingMsgId) {
+            const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
+            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ text: encryptedText, edited: true });
+            cancelEdit();
+        } else {
+            const msgData = { 
+                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
+                sender: userId, senderName: currentUserProfile.username, 
+                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
+            };
+            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
+            db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            input.value = ""; input.style.height = '50px';
         }
     }
 
@@ -403,10 +394,16 @@
         allMessages.forEach(m => {
             let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
+            
             let content;
             if(isDecoded) {
-                try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
-            } else { content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; }
+                try { 
+                    const bytes = CryptoJS.AES.decrypt(m.text, roomKey); 
+                    content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; 
+                } catch (e) { content = "⚠️ Error"; }
+            } else { 
+                content = `<span style="opacity:0.3; font-family:monospace; letter-spacing:2px;">••••••••••••</span>`; 
+            }
 
             let statusHtml = "";
             if (m.sender === userId) {
@@ -449,25 +446,39 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    async function handleSendAction() {
-        if(!roomId || !isDecoded) return;
-        let input = document.getElementById("inputText"), txt = input.value.trim();
-        if(!txt) return;
+    // --- UTILITIES ---
+    function listenMessages() {
+        if(unsubscribeMessages) unsubscribeMessages();
+        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
+            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
+        });
+    }
 
-        if(editingMsgId) {
-            const encryptedText = CryptoJS.AES.encrypt(txt, roomKey).toString();
-            await db.collection("groups").doc(roomId).collection("messages").doc(editingMsgId).update({ text: encryptedText, edited: true });
-            cancelEdit();
-        } else {
-            const msgData = { 
-                text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
-                sender: userId, senderName: currentUserProfile.username, 
-                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
-            };
-            if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
-            db.collection("groups").doc(roomId).collection("messages").add(msgData);
-            input.value = ""; input.style.height = '50px';
+    async function markAsSeen(msgId, currentSeenBy) {
+        if (!currentSeenBy.includes(userId)) {
+            try {
+                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
+                    seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
+                });
+            } catch (e) { console.log("Seen update error"); }
         }
+    }
+
+    async function addFriend() {
+        const fUid = document.getElementById("friendUid").value;
+        if(!fUid || !roomId) return;
+        try { await db.collection("groups").doc(roomId).update({ members: firebase.firestore.FieldValue.arrayUnion(fUid) }); closeModal('friendModal'); alert("Agent Invited!"); } catch(e) { alert(e.message); }
+    }
+
+    function toggleSecretInput() { 
+        const box = document.getElementById("lockerRoom");
+        if(isDecoded) { isDecoded = false; roomKey = null; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCK"; renderAllMessages(); box.style.display = "none"; }
+        else { box.style.display = (box.style.display === "none") ? "block" : "none"; }
+    }
+
+    function applyKey() { 
+        const key = document.getElementById("masterKey").value; 
+        if(key) { roomKey = key; isDecoded = true; document.getElementById("lockerRoom").style.display = "none"; document.getElementById("lockStatusBtn").innerText = "🔓 UNLOCKED"; document.getElementById("masterKey").value = ""; renderAllMessages(); } 
     }
 
     function setReply(id, encryptedText) {
@@ -494,14 +505,12 @@
     }
 
     function cancelEdit() { 
-        editingMsgId = null; 
-        document.getElementById("inputText").value = ""; 
-        document.getElementById("sendIcon").innerHTML = `
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); margin-left: 2px;">
-                <path d="M3.4 20.4l17.45-7.48c.81-.35.81-1.49 0-1.84L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"></path>
-            </svg>`; 
+        editingMsgId = null; document.getElementById("inputText").value = ""; 
+        document.getElementById("sendIcon").innerHTML = `<svg viewBox="0 0 24 24" width="34" height="34" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>`; 
     }
 
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 
     async function addReaction(emoji) {
@@ -516,16 +525,23 @@
         closeModal('reactionModal');
     }
 
+    async function deleteGroup(event, gId) {
+        event.stopPropagation();
+        if (confirm("Delete Chat?")) {
+            await db.collection("groups").doc(gId).delete();
+            if (roomId === gId) { roomId = null; document.getElementById("placeholderUI").style.display = "flex"; document.getElementById("chatInterface").style.display = "none"; }
+        }
+    }
+
     async function deleteMessage(msgId) {
         if (isDecoded && confirm("Delete?")) await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();
     }
 
-    function listenMessages() {
-        if(unsubscribeMessages) unsubscribeMessages();
-        unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
-            allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
-        });
-    }
+    // Emoji picker inside modal setup
+    document.querySelector('#fullEmojiPicker').addEventListener('emoji-click', event => {
+        addReaction(event.detail.unicode);
+    });
+
 </script>
 </body>
 </html>

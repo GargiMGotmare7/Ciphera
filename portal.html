@@ -63,6 +63,7 @@
         }
         .group-item:hover .delete-grp-btn { opacity: 1; }
 
+        /* CHANGE 4: Action buttons moved very close to bubbles */
         .msg-actions {
             position: absolute; top: 50%; transform: translateY(-50%); 
             display: flex; gap: 4px; opacity: 0; transition: 0.2s; z-index: 5;
@@ -105,6 +106,7 @@
         }
         .chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 
+        /* CHANGE 2: Smaller, tighter message bubbles */
         .message { 
             position: relative; padding: 6px 6px; border-radius: 16px; margin: 4px 0; 
             max-width: 60%; font-size: 0.9rem; line-height: 1.3; word-wrap: break-word;
@@ -115,6 +117,7 @@
         .msg-sender-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; opacity: 0.7; display: block; }
         .edited-pill { font-size: 9px; opacity: 0.4; font-style: italic; margin-left: 5px; }
 
+        /* CHANGE 3: Smaller ticks */
         .status-ticks { font-size: 8px; margin-left: 4px; font-weight: 900; letter-spacing: 0px; }
         .seen-blue { color: #00f2ff !important; text-shadow: 0 0 8px rgba(0, 242, 255, 0.8); }
         .delivered-grey { color: #64748b !important; }
@@ -122,12 +125,25 @@
         .input-area { padding: 25px; display: flex; align-items: center; gap: 15px; background: transparent; }
         textarea { resize: none; height: 50px; flex: 1; border-radius: 25px; padding: 15px 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; outline: none; }
 
+        /* CHANGE 1: Centering for the larger Send Icon */
         .btn-circle { 
-            background: linear-gradient(135deg, var(--accent), var(--secondary)); 
-            border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; padding: 0;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
-        }
+    background: linear-gradient(135deg, var(--accent), var(--secondary)); 
+    border: none; 
+    width: 45px;      
+    height: 45px; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 0;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
+}
+
+.btn-circle:hover {
+    transform: scale(1.05);
+    filter : brightness(1.1);
+}
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: #0f172a; padding: 30px; border-radius: 25px; width: 320px; border: 1px solid var(--accent); }
@@ -229,24 +245,17 @@
     let userId, roomId, roomKey, isDecoded = false, allMessages = [], unsubscribeMessages = null, replyingTo = null, editingMsgId = null, reactingToId = null;
     let currentUserProfile = { username: "User", photoURL: "" };
 
-    // Emoji Picker Event
     document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
         addReaction(event.detail.unicode);
-    });
-
-    // Enter to Send
-    document.getElementById("inputText").addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSendAction();
-        }
     });
 
     auth.onAuthStateChanged(u => { 
         if(u){ 
             userId = u.uid; document.getElementById("myUidDisplay").innerText = userId;
             syncProfile(); loadGroups();
-        } else { window.location.href = "index.html"; } 
+        } else { 
+            window.location.href = "index.html"; 
+        } 
     });
 
     async function syncProfile() {
@@ -336,7 +345,11 @@
 
     async function markAsSeen(msgId, currentSeenBy) {
         if (!currentSeenBy.includes(userId)) {
-            try { await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({ seenBy: firebase.firestore.FieldValue.arrayUnion(userId) }); } catch (e) { }
+            try {
+                await db.collection("groups").doc(roomId).collection("messages").doc(msgId).update({
+                    seenBy: firebase.firestore.FieldValue.arrayUnion(userId)
+                });
+            } catch (e) { console.log("Seen update error"); }
         }
     }
 
@@ -345,7 +358,6 @@
         allMessages.forEach(m => {
             let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
-            
             let content;
             if(isDecoded) {
                 try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
@@ -385,7 +397,8 @@
                 ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
-            d.innerHTML = `<span class="msg-sender-name">${m.senderName || "Unknown"}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
+            let senderName = m.senderName || "Unknown";
+            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
             chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -407,7 +420,7 @@
                 time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
             };
             if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
-            await db.collection("groups").doc(roomId).collection("messages").add(msgData);
+            db.collection("groups").doc(roomId).collection("messages").add(msgData);
             input.value = ""; input.style.height = '50px';
         }
     }
@@ -431,15 +444,18 @@
         try { const bytes = CryptoJS.AES.decrypt(encryptedText, roomKey); plainText = bytes.toString(CryptoJS.enc.Utf8); } catch(e) { plainText = ""; }
         editingMsgId = id;
         document.getElementById("inputText").value = plainText;
-        document.getElementById("sendIcon").innerHTML = '<b style="color:white; font-size:20px">✓</b>';
+        document.getElementById("sendIcon").innerHTML = '✓';
         document.getElementById("inputText").focus();
     }
 
     function cancelEdit() { 
-        editingMsgId = null; 
-        document.getElementById("inputText").value = ""; 
-        document.getElementById("sendIcon").innerHTML = `<svg viewBox="0 0 24 24" width="34" height="34" fill="white"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>`; 
-    }
+    editingMsgId = null; 
+    document.getElementById("inputText").value = ""; 
+    document.getElementById("sendIcon").innerHTML = `
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); margin-left: 2px;">
+            <path d="M3.4 20.4l17.45-7.48c.81-.35.81-1.49 0-1.84L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"></path>
+        </svg>`; 
+}
 
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 

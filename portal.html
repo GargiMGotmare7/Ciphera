@@ -250,7 +250,6 @@
         } catch(e) { console.error("Presence error", e); }
     }
 
-    // Set online/offline triggers
     window.addEventListener('focus', () => updatePresence('online'));
     window.addEventListener('blur', () => updatePresence('away'));
     window.addEventListener('beforeunload', () => updatePresence('offline'));
@@ -260,7 +259,8 @@
         if(u){ 
             userId = u.uid; 
             document.getElementById("myUidDisplay").innerText = userId;
-            updatePresence('online'); // Immediate online trigger
+            updatePresence('online'); 
+            // FIXED: Trigger syncProfile only after userId is set
             syncProfile(); 
             loadGroups();
         } else { 
@@ -270,15 +270,23 @@
 
     // --- PROFILE & GROUPS ---
     async function syncProfile() {
+        if(!userId) return; // Wait for auth
         try {
             const userDoc = await db.collection("users").doc(userId).get();
             if(userDoc.exists) {
-                currentUserProfile = userDoc.data();
-                document.getElementById("myNameDisplay").innerText = currentUserProfile.username;
-                document.getElementById("profUsername").value = currentUserProfile.username;
-                document.getElementById("profPicUrl").value = currentUserProfile.photoURL || "";
-                document.getElementById("myAvatar").src = currentUserProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserProfile.username)}&length=2&background=random&color=fff`;
-            } else { openModal('profileModal'); }
+                const data = userDoc.data();
+                currentUserProfile = data;
+                // FIXED: Defaulting to "User" if field is missing to avoid "undefined"
+                const name = data.username || "User";
+                const pic = data.photoURL || "";
+                
+                document.getElementById("myNameDisplay").innerText = name;
+                document.getElementById("profUsername").value = name;
+                document.getElementById("profPicUrl").value = pic;
+                document.getElementById("myAvatar").src = pic || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&length=2&background=random&color=fff`;
+            } else { 
+                openModal('profileModal'); 
+            }
         } catch(e) { console.error("Sync error:", e); }
     }
 
@@ -287,7 +295,8 @@
         const pic = document.getElementById("profPicUrl").value.trim();
         try {
             await db.collection("users").doc(userId).set({ username: name, photoURL: pic }, { merge: true });
-            closeModal('profileModal'); syncProfile();
+            closeModal('profileModal'); 
+            syncProfile();
         } catch(e) { alert("Error: " + e.message); }
     }
 
@@ -330,7 +339,6 @@
                     </div>
                     <button class="delete-grp-btn" onclick="deleteGroup(event, '${doc.id}')">✕</button>`;
                 
-                // Real-time Presence Listener for members
                 if(otherId) {
                     db.collection("users").doc(otherId).onSnapshot(uDoc => {
                         const uData = uDoc.data();
@@ -357,7 +365,6 @@
         });
     }
 
-    // --- CHAT LOGIC ---
     function switchGroup(id, name) {
         document.getElementById("placeholderUI").style.display = "none";
         document.getElementById("chatInterface").style.display = "flex";
@@ -446,7 +453,6 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- UTILITIES ---
     function listenMessages() {
         if(unsubscribeMessages) unsubscribeMessages();
         unsubscribeMessages = db.collection("groups").doc(roomId).collection("messages").orderBy("time", "asc").onSnapshot(sn => {
@@ -537,7 +543,6 @@
         if (isDecoded && confirm("Delete?")) await db.collection("groups").doc(roomId).collection("messages").doc(msgId).delete();
     }
 
-    // Emoji picker inside modal setup
     document.querySelector('#fullEmojiPicker').addEventListener('emoji-click', event => {
         addReaction(event.detail.unicode);
     });

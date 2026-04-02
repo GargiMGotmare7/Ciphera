@@ -374,6 +374,7 @@
         allMessages.forEach(m => {
             let d = document.createElement("div"); d.className = "message " + (m.sender === userId ? "sent" : "received");
             if (m.sender !== userId && isDecoded) { markAsSeen(m.id, m.seenBy || []); }
+            
             let content;
             if(isDecoded) {
                 try { const bytes = CryptoJS.AES.decrypt(m.text, roomKey); content = bytes.toString(CryptoJS.enc.Utf8) || "???????"; } catch (e) { content = "⚠️ Error"; }
@@ -413,34 +414,22 @@
                 ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
-            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
-let actionButtons = isDecoded ? `<div class="msg-actions">
-    <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
-    <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
-    ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
-    ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
-</div>` : "";
+            let senderName = m.senderName || "Unknown";
+            let senderPhoto = m.senderPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&length=2&background=random&color=fff`;
 
-// --- UPDATED SECTION START ---
-let senderName = m.senderName || "Unknown";
-// Use the saved photo, or generate a fallback avatar if it's missing
-let senderPhoto = m.senderPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random&color=fff`;
-
-d.innerHTML = `
-    <div class="msg-sender-info">
-        <img src="${senderPhoto}" class="mini-avatar">
-        <span class="msg-sender-name" style="margin-bottom:0;">${senderName}</span>
-    </div>
-    ${replyHtml}
-    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-        <div>${content}${editedTag}</div>
-        ${statusHtml}
-    </div>
-    ${reactionHtml}
-    ${actionButtons}`;
-// --- UPDATED SECTION END ---
-
-chatBox.appendChild(d);
+            d.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
+                    <img src="${senderPhoto}" style="width:16px; height:16px; border-radius:50%; object-fit:cover; border: 1px solid rgba(255,255,255,0.2);">
+                    <span class="msg-sender-name" style="margin:0;">${senderName}</span>
+                </div>
+                ${replyHtml}
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>${content}${editedTag}</div>
+                    ${statusHtml}
+                </div>
+                ${reactionHtml}
+                ${actionButtons}`;
+            chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -457,9 +446,13 @@ chatBox.appendChild(d);
         } else {
             const msgData = { 
                 text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
-                sender: userId, senderName: currentUserProfile.username, 
+                sender: userId, 
+                senderName: currentUserProfile.username, 
                 senderPhoto: currentUserProfile.photoURL || "",
-                time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
+                time: Date.now(), 
+                edited: false, 
+                reactions: {}, 
+                seenBy: [userId] 
             };
             if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
             db.collection("groups").doc(roomId).collection("messages").add(msgData);
@@ -491,13 +484,13 @@ chatBox.appendChild(d);
     }
 
     function cancelEdit() { 
-    editingMsgId = null; 
-    document.getElementById("inputText").value = ""; 
-    document.getElementById("sendIcon").innerHTML = `
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); margin-left: 2px;">
-            <path d="M3.4 20.4l17.45-7.48c.81-.35.81-1.49 0-1.84L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"></path>
-        </svg>`; 
-}
+        editingMsgId = null; 
+        document.getElementById("inputText").value = ""; 
+        document.getElementById("sendIcon").innerHTML = `
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="white">
+                <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path>
+            </svg>`; 
+    }
 
     function openReaction(id) { if(isDecoded) { reactingToId = id; openModal('reactionModal'); } }
 
@@ -523,6 +516,5 @@ chatBox.appendChild(d);
             allMessages = []; sn.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() })); renderAllMessages();
         });
     }
-</script>
 </body>
 </html>

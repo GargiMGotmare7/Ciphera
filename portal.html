@@ -154,6 +154,22 @@
         .unlock-pill { background: rgba(192, 132, 252, 0.1); border: 1px solid var(--secondary); color: var(--secondary); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
         #placeholderUI { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(40px); }
         .profile-pic { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+    
+    /* Style for the mini avatar inside message bubbles */
+.msg-sender-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.mini-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
     </style>
 </head>
 <body>
@@ -397,9 +413,34 @@
                 ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
             </div>` : "";
             
-            let senderName = m.senderName || "Unknown";
-            d.innerHTML = `<span class="msg-sender-name">${senderName}</span>${replyHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;"><div>${content}${editedTag}</div>${statusHtml}</div>${reactionHtml}${actionButtons}`;
-            chatBox.appendChild(d);
+            let editedTag = m.edited ? `<span class="edited-pill">(edited)</span>` : "";
+let actionButtons = isDecoded ? `<div class="msg-actions">
+    <button class="action-btn react-btn" onclick="openReaction('${m.id}')">☺</button>
+    <button class="action-btn rep-btn" onclick="setReply('${m.id}', '${m.text}')">⮪</button>
+    ${m.sender === userId ? `<button class="action-btn edit-btn" onclick="setEdit('${m.id}', '${m.text}')">✎</button>` : ''}
+    ${m.sender === userId ? `<button class="action-btn del-btn" onclick="deleteMessage('${m.id}')">✕</button>` : ''}
+</div>` : "";
+
+// --- UPDATED SECTION START ---
+let senderName = m.senderName || "Unknown";
+// Use the saved photo, or generate a fallback avatar if it's missing
+let senderPhoto = m.senderPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random&color=fff`;
+
+d.innerHTML = `
+    <div class="msg-sender-info">
+        <img src="${senderPhoto}" class="mini-avatar">
+        <span class="msg-sender-name" style="margin-bottom:0;">${senderName}</span>
+    </div>
+    ${replyHtml}
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>${content}${editedTag}</div>
+        ${statusHtml}
+    </div>
+    ${reactionHtml}
+    ${actionButtons}`;
+// --- UPDATED SECTION END ---
+
+chatBox.appendChild(d);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -417,6 +458,7 @@
             const msgData = { 
                 text: CryptoJS.AES.encrypt(txt, roomKey).toString(), 
                 sender: userId, senderName: currentUserProfile.username, 
+                senderPhoto: currentUserProfile.photoURL || "",
                 time: Date.now(), edited: false, reactions: {}, seenBy: [userId] 
             };
             if(replyingTo) { msgData.replyTo = { id: replyingTo.id, text: replyingTo.text }; cancelReply(); }
